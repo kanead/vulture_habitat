@@ -1,3 +1,4 @@
 !raw_data/.gitkeep
 amt_tracks
 for_annotation
+*.csv
