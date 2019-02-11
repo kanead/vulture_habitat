@@ -248,3 +248,4 @@ write.csv(ssf.df.out, file="for_annotation/CorinneSSFannotate.csv", row.names = 
 
 #' we can export the whole file with all of the extra columns we added 
 write.csv(ssf.df, file="amt_tracks/CorinneSSFAll.csv", row.names = FALSE)
+

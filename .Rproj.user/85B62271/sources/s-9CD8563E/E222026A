@@ -5,17 +5,17 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "2072485863",
+    "hash" : "0",
     "id" : "E222026A",
-    "lastKnownWriteTime" : 1549882519,
-    "last_content_update" : 1549882519131,
+    "lastKnownWriteTime" : 1549898166,
+    "last_content_update" : 1549898166673,
     "path" : "~/Manuscripts/vulture_habitat/code/3. model_fitting_ck_tanz.R",
     "project_path" : "code/3. model_fitting_ck_tanz.R",
     "properties" : {
-        "cursorPosition" : "14,13",
-        "scrollLine" : "0"
+        "cursorPosition" : "124,8",
+        "scrollLine" : "84"
     },
-    "relative_order" : 2,
+    "relative_order" : 3,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

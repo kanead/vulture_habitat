@@ -1,24 +1,39 @@
-# Step Selection Function Analysis for Corinne Kendall's Tanzania Data
-
-library(raster)
+#' ---
+#' title: "Fisher SSF"
+#' author: "John Fieberg"
+#' date: ""
+#' ---
+#' 
+#' 
+#' ### Preamble
+#' 
+#' Load libraries
+#+warning=FALSE, message=FALSE
+library(ezknitr)
+library(knitr)
 library(lubridate)
+library(raster)
+library(move)
+library(amt) 
 library(tidyverse)
-library(amt)
-library(glmmTMB)
-library(INLA)
-library(lme4)
+options(width=150)
+opts_chunk$set(fig.width=12,fig.height=4.5)
 
-#' load in the annotated data from that we got from Movebank
-annotated_data <- read_csv("annotated/step selection corinne-1660591318242364550.csv") 
-head(annotated_data)
-#' load in the full data set we prepared earlier
-raw_data <- read_csv("amt_tracks/CorinneSSFAll.csv")
-head(raw_data)
-#' extract the required variables from the full dataset 
-raw_data <- dplyr::select(raw_data, case_, sl_, step_id_)
-head(raw_data)
-ssfdat <- raw_data
 
+#' Read in annotated available data for RSF modeling
+ssfdat<-read.csv("data/AllStepsFisher2018-EnvDATA-results.csv")
+
+#' Convert time variables
+ssfdat$t1_<-as.POSIXct(ssfdat$t1_, format="%Y-%m-%d %H:%M:%OS", tz="UTC")
+ssfdat$t2_<-as.POSIXct(ssfdat$t2_, format="%Y-%m-%d %H:%M:%OS", tz="UTC")
+ 
+   
+#' Simplify some variable names and make case a numeric variable
+names(ssfdat)[c(16,21,20,22)]<-c("id","Elevation", "LandClass", "PopDens")
+ssfdat$case_<-as.numeric(ssfdat$case)
+
+#' Group landcover classes 
+#'  
 #' Attributes from annotated environmental data:
 #' Name: GlobCover 2009 Land-Cover Classification
 #' Description: Land cover class:
@@ -48,39 +63,63 @@ ssfdat <- raw_data
 #' No data values: 255 (provider), NaN (interpolated)
 #' Interpolation: nearest-neighbour
 
-#' stick the landcover class and id variables onto this data set
-
-names(annotated_data)[names(annotated_data) == 'GlobCover 2009 Land-Cover Classification'] <- 'LandClass'
-ssfdat$LandClass<-as.character(annotated_data$LandClass)
-ssfdat$id<-annotated_data$`individual-local-identifier`
-
-#' Group landcover classes (this is the classifcation from the amt authors)
-
+ssfdat$LandClass<-as.character(ssfdat$LandClass)
 ssfdat<-ssfdat %>% mutate(landC = fct_collapse(LandClass,
-                                               agri = c("11", "14","20", "30"),
+                                               agri = c("11", "14", "30"),
                                                forest =c("30","40","50","60", "70","80", "90","100"),
                                                shrub= c("110", "130", "150"),
                                                grass = c("120", "140"),
                                                wet= c("160"),
                                                other = c("170", "180", "190", "200", "210", "220")))
 
+#' Center and scale variables
+ssfdat<-ssfdat %>% mutate(elev=as.numeric(scale(Elevation)), 
+                          popD=as.numeric(scale(PopDens)))
+
+#' ## Explore the data:
+
 #' Look Distribution of variables for used and available
+#+fig.width=8, fig.height=8
+binomial_smooth <- function(...) {
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), ...)
+}
+ggplot(ssfdat,aes(x=Elevation, y=case_))+
+  stat_smooth(method="glm", method.args = list(family = "binomial"))+
+  binomial_smooth(formula = y ~ splines::ns(x, 5), colour="red")+
+  facet_wrap(~id, scales="free")
+
+
+ggplot(ssfdat,aes(x=PopDens, y=case_))+
+  stat_smooth(method="glm", method.args = list(family = "binomial"))+
+  binomial_smooth(formula = y ~ splines::ns(x, 5), colour="red")+
+  facet_wrap(~id, scales="free")
+
 ggplot(ssfdat, aes(x=landC, y=..prop..,group=case_, colour=case_))+
   geom_bar(position="dodge", aes(fill=case_))+facet_wrap(~id, scales="free")
 
-#' Fit an SSF to a single animal
-levels(as.factor(ssfdat$id))
-summary(fit_issf(case_ ~ landC+sl_+log(sl_)+strata(step_id_), 
-                 data = subset(ssfdat, id=="163113")))
 
-#' Since not all animals experience
+#' Now, fit an RSF model to data from each animal.  Since not all animals experience
 #' all habitat types, lets just explore forest versus non-forest
-ssfdat$grass<-ifelse(ssfdat$landC=="grass", 1, 0)
+ssfdat$forest<-ifelse(ssfdat$landC=="forest", 1, 0)
+
+#' Fit an SSF to a single animal
+summary(fit_issf(case_ ~ Elevation+PopDens+forest+sl_+log(sl_)+strata(step_id_), 
+                 data = subset(ssfdat, id=="M1")))
+        
+
+#' Note, animal 1587 was always in forest, so we can't include forest 
+#' for this individual.
 
 #' Fit an SSF model to data from each animal
 fitted_ssf <- function(data){
-      mod <- fit_issf(case_ ~ grass+sl_+log(sl_)+strata(step_id_), data=data)
-      return(mod)
+  n0<-sum(data$forest==0) 
+  if(n0==0){ #  this will be id = M5
+    mod <- fit_issf(case_ ~ Elevation+PopDens+sl_+log(sl_)+strata(step_id_), data=data)
+  }
+  if(n0>0){
+  mod <- fit_issf(case_ ~ Elevation+PopDens+forest+sl_+log(sl_)+strata(step_id_), data=data)
+  }
+  return(mod)
 }
 ssffits <-ssfdat %>%  nest(-id) %>% 
   dplyr::mutate(mod = purrr::map(data, fitted_ssf)) 
@@ -99,7 +138,7 @@ ssffits$tidy
 ssf_coefs <- ssffits %>%
   tidyr::unnest(tidy) %>%
   dplyr::select(-(std.error:conf.high)) 
-
+  
 ssf_coefs %>% tidyr::spread(term, estimate)
 
 #' Plot coefficients
@@ -110,21 +149,10 @@ ssf_coefs %>%
   facet_wrap(~term, scales="free")
 
 
-#' two-step procedure implemented in the TwoStepCLogit
-#' package (Craiu et al. 2016)
-
-#' Prepare covariates
-
-ssfdat<-ssfdat %>%
-  mutate(y = as.numeric(case_), id = as.numeric(factor(id))) %>%
-  dplyr::select(id, y, grass, stratum = step_id_)
-ssfdat$stratum_id <- paste(ssfdat$id, ssfdat$stratum)
-
-
-library(TwoStepCLogit)
-Ts.estim(y ~ grass + strata(stratum_id) + cluster(id),
-         random = ~ grass,
-         data = ssfdat,
-         D="UN(1)")
-
-
+#' ## Document Footer	
+#' 	
+#' Document spun with:  ezspin("FisherSSF.R",  fig_dir = "figures", keep_md=FALSE)  	
+#' 	
+#' Session Information:	
+#' 	
+sessionInfo()	  

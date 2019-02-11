@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1549888229243.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "AA1B95FD",
+    "lastKnownWriteTime" : 1547824706,
+    "last_content_update" : 1549889373651,
+    "path" : "~/Methods/Movebank/Rscripts/FisherSSF2018.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "158,0",
+        "scrollLine" : "112"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
