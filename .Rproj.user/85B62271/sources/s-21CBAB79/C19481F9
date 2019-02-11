@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1549881731109.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C19481F9",
+    "lastKnownWriteTime" : 1549640560,
+    "last_content_update" : 1549640560,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_ck_tanz.R",
+    "project_path" : "code/2. prep_ck_tanz.R",
+    "properties" : {
+        "cursorPosition" : "250,0",
+        "scrollLine" : "204"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
