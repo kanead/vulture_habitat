@@ -7,13 +7,13 @@
     "folds" : "",
     "hash" : "0",
     "id" : "E222026A",
-    "lastKnownWriteTime" : 1549898166,
-    "last_content_update" : 1549898166673,
+    "lastKnownWriteTime" : 1549901030,
+    "last_content_update" : 1549901030403,
     "path" : "~/Manuscripts/vulture_habitat/code/3. model_fitting_ck_tanz.R",
     "project_path" : "code/3. model_fitting_ck_tanz.R",
     "properties" : {
-        "cursorPosition" : "124,8",
-        "scrollLine" : "84"
+        "cursorPosition" : "81,70",
+        "scrollLine" : "60"
     },
     "relative_order" : 3,
     "source_on_save" : false,

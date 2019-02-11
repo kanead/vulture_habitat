@@ -15,7 +15,7 @@ head(annotated_data)
 raw_data <- read_csv("amt_tracks/CorinneSSFAll.csv")
 head(raw_data)
 #' extract the required variables from the full dataset 
-raw_data <- dplyr::select(raw_data, case_, sl_, step_id_)
+raw_data <- dplyr::select(raw_data, case_, sl_, step_id_,t1_)
 head(raw_data)
 ssfdat <- raw_data
 
@@ -54,6 +54,11 @@ names(annotated_data)[names(annotated_data) == 'GlobCover 2009 Land-Cover Classi
 ssfdat$LandClass<-as.character(annotated_data$LandClass)
 ssfdat$id<-annotated_data$`individual-local-identifier`
 
+#' can subset to diurnal times, this is optional 
+ssfdat <- with( ssfdat , ssfdat[ hour(  t1_ ) >= 6 & hour(  t1_ ) <= 18 , ] )
+# have a look at the hours to make sure they are diurnal
+hour(ssfdat$t1_)
+
 #' Group landcover classes (this is the classifcation from the amt authors)
 
 ssfdat<-ssfdat %>% mutate(landC = fct_collapse(LandClass,
@@ -74,14 +79,16 @@ summary(fit_issf(case_ ~ landC+sl_+log(sl_)+strata(step_id_),
                  data = subset(ssfdat, id=="163113")))
 
 #' Since not all animals experience
-#' all habitat types, lets just explore forest versus non-forest
+#' all habitat types, lets just explore grass-habitat versus non-grass
 ssfdat$grass<-ifelse(ssfdat$landC=="grass", 1, 0)
 
 #' Fit an SSF model to data from each animal
+#' here's the function
 fitted_ssf <- function(data){
       mod <- fit_issf(case_ ~ grass+sl_+log(sl_)+strata(step_id_), data=data)
       return(mod)
 }
+#' fit it to our data
 ssffits <-ssfdat %>%  nest(-id) %>% 
   dplyr::mutate(mod = purrr::map(data, fitted_ssf)) 
 
@@ -102,14 +109,14 @@ ssf_coefs <- ssffits %>%
 
 ssf_coefs %>% tidyr::spread(term, estimate)
 
-#' Plot coefficients
-#+ fig.width=12, fig.height= 8
+#' Plot coefficients from the model
 ssf_coefs %>% 
-  ggplot(., aes(x=1, y=estimate)) + 
+  ggplot(., aes(x=1, y=estimate,fill = factor(id))) + 
   geom_dotplot(binaxis="y", stackdir="center")+geom_hline(yintercept=0)+
   facet_wrap(~term, scales="free")
 
-
+#' Alternative method that does analysis in one go rather than
+#' looping over the ids through a function
 #' two-step procedure implemented in the TwoStepCLogit
 #' package (Craiu et al. 2016)
 
@@ -126,5 +133,6 @@ Ts.estim(y ~ grass + strata(stratum_id) + cluster(id),
          random = ~ grass,
          data = ssfdat,
          D="UN(1)")
+
 
 
