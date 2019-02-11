@@ -1,4 +1,4 @@
 !raw_data/.gitkeep
-amt_tracks
-for_annotation
+!amt_tracks/.gitkeep
+!for_annotation/.gitkeep
 *.csv
