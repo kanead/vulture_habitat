@@ -1,6 +1,0 @@
-# Swaziland Vulture Tracking Dataset 
-
-library(lubridate)
-library(SDLfilter)
-library(amt)
-library(sp)

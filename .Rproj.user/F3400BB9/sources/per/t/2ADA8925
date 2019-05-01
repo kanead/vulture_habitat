@@ -1,21 +1,21 @@
 {
     "collab_server" : "",
     "contents" : "",
-    "created" : 1556702487861.000,
+    "created" : 1556702068098.000,
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "0",
-    "id" : "1840B31F",
+    "hash" : "977563120",
+    "id" : "2ADA8925",
     "lastKnownWriteTime" : 1556702018,
     "last_content_update" : 1556702018,
-    "path" : "~/Science/Manuscripts/vulture_habitat/code/2. prep_ck_tanz.R",
-    "project_path" : "code/2. prep_ck_tanz.R",
+    "path" : "~/Science/Manuscripts/vulture_habitat/code/1_load_data.R",
+    "project_path" : "code/1_load_data.R",
     "properties" : {
-        "cursorPosition" : "251,0",
-        "scrollLine" : "238"
+        "cursorPosition" : "27,0",
+        "scrollLine" : "12"
     },
-    "relative_order" : 3,
+    "relative_order" : 1,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"
