@@ -1,0 +1,247 @@
+#' ---
+#' title: "EnvDATAvizAnimate"
+#' author: "Sarah Davidson"
+#' date: "May 2019"
+#' output:
+#'  html_document:
+#'    toc: yes
+#' ---
+
+#' 
+#' ## Purpose
+#' 
+#' Demonstrate how to build animated tracking maps using tracking data in Movebank, 
+#' environmental covariates in track and raster annotations from EnvDATA, and the moveVis
+#' package. Subsequent examples become more complete and cover more complicated situations.  
+
+#'
+#' Notes:
+#' * Consider exploring tracking data in Movebank, DynamoVis (https://doi.org/10.13020/D6PH49)
+#' and/or Google Maps first to evaluate datasets you're not yet familiar with and plan out 
+#' animations.
+#' * See more about the moveVis package at http://movevis.org.
+
+#' 
+#' ## Load libraries
+#+warning=FALSE, message=FALSE
+library(ggplot2)
+library(moveVis)
+library(move)
+library(magrittr)
+library(raster)
+options(max.print=100)
+options(width=95)
+
+#'
+#' ## Prepare the tracking data.
+#' Load the Svalbard geese dataset (Griffin, 2014, https://doi.org/10.5441/001/1.5k6b1364).
+geese.move <- move("annotations/Svalbard geese 1k 16d NDVI-3281758398705165226/Svalbard geese 1k 16d NDVI-3281758398705165226.csv")
+geese.move
+
+#' As shown in "timestamps" this study covers 5 years (4/5/2006 to 6/18/2011, 1900 days). Let's
+#' reduce it to the migration with the largest number of birds (spring 2007).
+geese.s07 <- subset(geese.move, timestamp >= as.POSIXct('2007-04-01 00:00:00.000') 
+                    & timestamp <= as.POSIXct('2007-06-15 00:00:00.000'))
+
+#'
+#' ### Make frames of tracking data for animation.
+#' Evaluate tracking data for sampling rates if unknown. Use this information to help decide 
+#' the temporal resolution at which to align the data for the animation.
+unique(timestamps(geese.s07))
+timeLag(geese.s07, unit = "hours")
+
+#' Align tracking data to uniform temporal resolution for interpretation by frames_spatial.
+geese <- align_move(geese.s07, res = 12, unit = "hours", spaceMethod = "greatcircle")
+
+#' Could use 2-hr resolution for a final product but 12-hr should speed up processing.
+
+#'
+#' ## Create animation with static web basemap.
+#' Create map frames for animation (see p.25 of MoveVis manual). Note that equidistant = TRUE
+#' does not mean that the map will be displayed in an equidistant projection (i.e. that 
+#' preserves distances). Instead it causes frames_spatial to stretch the displayed area to an 
+#' square extent. If equidistant = FALSE, the extent is displayed in the projection-native axis
+#' ratio.
+frames <- frames_spatial(geese, map_service = "osm", map_type = "watercolor", 
+                         equidistant = FALSE, path_legend = T, path_legend_title = "Geese", 
+                         alpha = 0.5)
+
+#' Have a look at one of the frames.
+frames[[100]]
+
+#' Note: Working with the frames I sometimes get a message "Error in grid.Call....polygon edge 
+#' not found" but if I rerun the same code the command succeeds.
+
+#' Add labels and a progress bar.
+frames.l <- add_labels(frames, x = "Longitude", y = "Latitude") %>% # axis labels
+  add_progress() %>% # progress bar
+  add_scalebar() %>% # scale bar
+  add_northarrow() %>% # north arrow
+  add_timestamps(geese, type = "label") # timestamps
+
+#' See the changes.
+frames.l[[100]]
+
+#' Record an animation using defaults shown in in moveVis manual p.18.
+animate_frames(frames.l, "animations/Svalbard_geese_osm_test.gif", fps = 25, 
+               width = 500, height = 800, res = 100, 
+               display = TRUE, overwrite = TRUE, verbose = TRUE)
+
+#' Running animate_frames takes a while, you can go grab a coffee. When it finishes, check out 
+#' your gif. That was easy, thanks moveVis! Now what if we have our own raster 
+#' basemap? Let's try it with the ETOPO DEM we got from EnvDATA (see 
+#' https://doi.org/10.7289/V5C8276M).
+
+#'
+#' ## Prepare raster basemaps.
+#' See EnvDataGridRequestWorksheet_SvalbardGeese.pdf for details on the requests submitted for 
+#' this example and EnvDATAvizRaster.R for more about working with rasters. If you need to 
+#' merge multiple rasters per basemap, create a separate folder for each set of raster files to
+#' merge and rename files if that helps keep things organized.
+
+#' Merge ETOPO files into a single background raster using the raster package.
+DEMs <- lapply(list.files("annotations/ETOPO/rasters_ETOPO/", full.names = TRUE), raster)
+DEM.basemap <- do.call(merge, DEMs)
+
+#' View stats.
+DEM.basemap
+hist(DEM.basemap, main = "Elevation (m)",
+     col = "blue",
+     maxpixels = 3240000) # if ncell > 100000, add this
+#' Could use this histogram to help define optional breaks to use in colourmap, more below.
+
+#' Plot.
+plot(DEM.basemap)
+
+#'
+#' ## Create animation with static raster basemap.
+#' Create map frames for animation (see p.25 of MoveVis manual).
+#' Using the start time for r_times since there is just 1 raster. 
+starttime <- as.POSIXct('2007-04-15 00:00:00.000')
+frames <- frames_spatial(geese, r_list = DEM.basemap, r_times = starttime, 
+                         r_type = "gradient", fade_raster = FALSE, equidistant = FALSE,
+                         path_legend = T, path_legend_title = "Geese", alpha = 0.9)
+
+#' Check a frame.
+frames[[10]]
+
+#' Add labels and colorscale for the raster, clean up a bit from the previous example.
+frames.l <- add_labels(frames, x = "Longitude", y = "Latitude") %>%
+  add_progress() %>%
+  add_scalebar(distance = 600, position = "bottomright") %>%
+  add_timestamps(geese, x = 4, y = 78.5, type = "label") %>% # x & y in degrees
+  add_colourscale(type = "gradient", 
+                  colours = c("-5600" = "steelblue4", "-0.01" = "steelblue1", "0" = "white",
+                              "0.01" = "wheat1", "2200" = "sienna4"),
+                  legend_title = "Elevation\n(m amsl)")
+
+#' Check a frame.
+frames.l[[100]]
+
+#' Currently the scale and color assignments are off: white should occur at 0 elevation but 
+#' instead is in the middle of the range of values. This bug is fixed with v0.10.2 of moveVis, 
+#' currently you can install this from GitHub using  
+#' remotes::install_github("16eagle/moveVis") 
+
+#' Record an animation.
+animate_frames(frames.l, "animations/Svalbard_geese_dem_test.gif", fps = 25, width = 500, height = 800, res = 100, display = TRUE, overwrite = TRUE, verbose = TRUE)
+
+#' Hurray, now we can watch our animals move over any environmental layer in EnvDATA! But 
+#' what about all the variables that change over time? 
+
+#'
+#' ## Create animation with multiple raster basemaps.
+#' Let's try this with 16-day NDVI from MODIS (see https://doi.org/10.5067/MODIS/MYD13A2.006).
+
+#'
+#' ### First merge NDVI geotif files into a single background raster for each date (if needed).
+scenes <- c("rasters_NDVI_MYD13A2_20070330", "rasters_NDVI_MYD13A2_20070415", 
+            "rasters_NDVI_MYD13A2_20070430", "rasters_NDVI_MYD13A2_20070515", 
+            "rasters_NDVI_MYD13A2_20070531", "rasters_NDVI_MYD13A2_20070615")
+scenes <- paste0("annotations/NDVI/", scenes)
+
+NDVIs.all <- stack(lapply(scenes, function(x) 
+  do.call(merge, lapply(list.files(x, full = TRUE), raster))))
+
+names(NDVIs.all) <- paste("NDVI", c("30 March", "15 April", "30 April", "15 May",  
+                                    "31 May", "15 June"))
+
+#'
+#' ### Prepare lists of rasters and times of the NDVI basemaps for frames_spatial.
+NDVI.times <- list('2007-03-30 00:00:00.000', '2007-04-15 00:00:00.000', 
+                   '2007-04-30 00:00:00.000', '2007-05-15 00:00:00.000', 
+                   '2007-05-31 00:00:00.000', '2007-06-15 00:00:00.000')
+NDVI.times <- as.POSIXct(strptime(NDVI.times, format = "%Y-%m-%d %H:%M:%OS"), tz="GMT")
+
+#' Create map frames for animation. Let's try some changes to the track paths.
+frames <- frames_spatial(geese, r_list = unstack(NDVIs.all), r_times = NDVI.times, 
+                         r_type = "gradient", fade_raster = FALSE, equidistant = FALSE,
+                         tail_length = 0.7, path_legend = TRUE, path_legend_title = "Geese", 
+                         alpha = 0.9)
+
+#' Check a frame.
+frames[[100]]
+
+#' Add labels and colorscale for the rasters.
+frames.l <- add_labels(frames, x = "Longitude", y = "Latitude") %>%
+  add_progress() %>%
+  add_scalebar(distance = 600, position = "bottomright") %>%
+  add_timestamps(geese, x = 4, y = 78.5, type = "label") %>%
+  add_colourscale(type= "gradient", colours = c("wheat", "forestgreen"), legend_title = "NDVI")
+
+#' Check a frame.
+frames.l[[100]]
+
+#' Record an animation, slowing down the animation a bit compared to the others.
+animate_frames(frames.l, "animations/Svalbard_geese_ndvi_test.gif", fps = 10, width = 500,
+               height = 800, res = 100, display = TRUE, overwrite = TRUE, verbose = TRUE)
+
+#' Awesome, now we can animate both our tracks and raster base layers over time. For these 
+#' geese, we have the remaining problem that they are migrating to very high latitudes and the 
+#' default projection has a lot of distortion. Let's try using a different projection.
+
+#'
+#' ## Reproject tracking data and rasters.
+
+# WGS84/North Pole Lambert Azimuthal Equal Area (http://spatialreference.org/ref/sr-org/7250/)
+crs.new = CRS("+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+
+#' Reproject the tracks.
+geese.polar <- spTransform(geese, crs.new)
+geese.polar # check "extent" and "coord. ref."
+
+#' Reproject the NDVI rasters.
+NDVIs.all.polar = raster::projectRaster(NDVIs.all, crs = crs.new, method = "bilinear")
+
+#' Create map frames for animation.
+#' Note: moveVis 0.10.2 will allow you to assign a color for missing raster values: 
+#' na.colour for continuous variables and na.show for discrete variables.
+frames <- frames_spatial(geese.polar, r_list = unstack(NDVIs.all.polar), r_times = NDVI.times, 
+                         r_type = "gradient", fade_raster = FALSE, equidistant = FALSE,
+                         tail_length = 1, path_legend = T, 
+                         path_legend_title = "Geese", alpha = 0.9)
+
+#' Check a frame.
+frames[[100]]
+
+#' Add labels and raster colorscale.
+frames.l <- add_labels(frames, x = "Easting (m)", y = "Northing (m)") %>%
+  add_progress() %>%
+  #add_scalebar(distance = 500, position = "bottomright") %>% # causes an error
+  add_timestamps(geese.polar, type = "label") %>%
+  add_colourscale(type= "gradient", colours = c("wheat", "forestgreen"), legend_title = "NDVI")
+
+#' Check a frame.
+frames.l[[100]]
+
+#' Record a final animation, slowing down the animation a bit compared to the others.
+animate_frames(frames.l, "animations/Svalbard_geese_ndvi_polar.gif", fps = 10, width = 700, height = 700, res = 100)
+
+#' As final note: One thing missing here is an animation with the animal locations colored 
+#' based on an annotated covariate. The trick here is that when we use align_move to align the 
+#' dataset to a consistent temporal resolution so that we can create frames to animate, our 
+#' times and locations are interpolated, and we lose most of the information in the other 
+#' columns of our dataset, including our annotated values. This might be solved by finding a
+#' a way to do something like align_move that retains or interpolates covariate values from 
+#' the dataset, or interpolating values from the original dataset to the aligned one. Remember 
+#' this will lead to some reduction in accuracy.
