@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "0",
+    "hash" : "783646485",
     "id" : "C19481F9",
     "lastKnownWriteTime" : 1549887355,
-    "last_content_update" : 1549887355375,
+    "last_content_update" : 1549887355,
     "path" : "~/Manuscripts/vulture_habitat/code/2. prep_ck_tanz.R",
     "project_path" : "code/2. prep_ck_tanz.R",
     "properties" : {
-        "cursorPosition" : "222,3",
-        "scrollLine" : "205"
+        "cursorPosition" : "190,27",
+        "scrollLine" : "0"
     },
     "relative_order" : 2,
     "source_on_save" : false,
