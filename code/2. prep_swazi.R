@@ -191,13 +191,12 @@ timestats <- timestats %>%
               distinct(id, species), by = 'id')
 
 #' add the study name 
-timestats$study <- "ck_tanz"
+timestats$study <- "ck_swazi"
 head(timestats)
 
 #' make sure it matches up 
-filter(trk,id=="33021") # hv
-filter(trk,id=="33017") # wb
-filter(trk,id=="163119") # wh
+filter(trk,id=="ID1") # wb
+filter(trk,id=="ID2") # wb
 
 #' export the data 
 write.csv(timestats, file="track_resolution_summary/ck_tanz_res.csv", row.names = FALSE)
@@ -239,8 +238,8 @@ luid<-length(uid) # number of unique individuals
 for(i in 1:luid){
   # Subset individuals & regularize track
   temp<-temptrk%>% filter(id==uid[i]) %>% 
-    track_resample(rate=hours(round(timestats$median[i])), 
-                   tolerance=minutes(30))
+    track_resample(rate=hours(round(1)), 
+                   tolerance=minutes(10))
   
   # Get rid of any bursts without at least 2 points
   temp<-filter_min_n_burst(temp, 2)
@@ -304,3 +303,55 @@ write.csv(ssf.df.out, file="for_annotation/CorinneSSFannotate.csv", row.names = 
 #' we can export the whole file with all of the extra columns we added 
 write.csv(ssf.df, file="amt_tracks/CorinneSSFAll.csv", row.names = FALSE)
 
+#' ### Space use (MCP or KDE) by week, month, and year
+#' 
+#' Note:  this code will only work for your critters if you
+#' have multiple observations for each combination of
+#' (month, year).  If you don't have many observations, you could
+#' try:  nest(-id, -year) and unnest(id,year)
+#' mcps.week<-trk %>% nest(-id,-year,  -month, -week) %>%  
+#' mutate(mcparea = map(data, ~hr_mcp(., levels = c(0.95)) %>% hr_area)) %>% 
+#'  select(id, year, month, week, mcparea) %>% unnest()
+
+#' convert our regularised data back into a trk type data frame
+home_range_data <- ssfdat %>% filter(case_=="TRUE") %>% select(x1_, y1_, t1_, id) %>% group_by(id)
+
+home_range_trk <- mk_track(home_range_data, .x=x1_, .y=y1_, .t=t1_, id = id, 
+                           crs = CRS("+init=epsg:4326"))
+
+
+mcps <-home_range_trk %>% nest(-id) %>%  
+  mutate(mcparea = map(data, ~hr_mcp(., levels = c(0.95)) %>% hr_area)) %>% 
+  select(id, mcparea) %>% unnest()
+
+#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
+ggplot(mcps, aes(x = id, y = area)) + geom_point()+
+  geom_smooth()
+
+#' Same for KDE
+kde <-home_range_trk %>% nest(-id) %>%  
+  mutate(kdearea = map(data, ~hr_kde(., levels=c(0.95)) %>% hr_area)) %>%
+  select(id, kdearea) %>% unnest()
+
+#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
+ggplot(kde, aes(x = id, y = kdearea)) + geom_point()+
+  geom_smooth()
+
+
+#' map the data
+library(leaflet)
+levels(as.factor(home_range_data$id))
+leaflet() %>% addTiles() %>% 
+  addCircleMarkers(data = filter(home_range_data, id == "ID2"),
+                   lat = ~y1_, lng = ~x1_,
+                   color = "blue")
+
+#' find the centroid 
+library(geosphere)
+home_range_data %>% filter(id=="ID1") %>%  mean_x = mean(x1_)
+
+mean(home_range_data$x1_[home_range_data$id=="ID1"])
+mean(home_range_data$y1_[home_range_data$id=="ID1"])
+
+mean(home_range_data$x1_[home_range_data$id=="ID2"])
+mean(home_range_data$y1_[home_range_data$id=="ID2"])
