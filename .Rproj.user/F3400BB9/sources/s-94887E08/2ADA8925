@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556702068098.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2ADA8925",
+    "lastKnownWriteTime" : 1556702018,
+    "last_content_update" : 1556702018,
+    "path" : "~/Science/Manuscripts/vulture_habitat/code/1_load_data.R",
+    "project_path" : "code/1_load_data.R",
+    "properties" : {
+        "cursorPosition" : "21,0",
+        "scrollLine" : "9"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

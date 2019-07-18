@@ -146,16 +146,21 @@ ggplot(trk, aes(x = dir_abs, y=..density..)) + geom_histogram(breaks = seq(0,360
 
 #' ### Turning angles 
 #' 
-#' Note: a 0 indicates the animal continued to move in a straight line, a 180 
+#' Note: a 0 indicates the animal continued to move in a straight line, a 180
 #' indicates the animal turned around (but note, resting + measurement error often can
 #' make it look like the animal turned around).
 #+fig.height=12, fig.width=12
-ggplot(trk, aes(x = dir_rel, y=..density..)) + geom_histogram(breaks = seq(-180,180, by=20))+
-  coord_polar(start = 0) + theme_minimal() + 
-  scale_fill_brewer() + ylab("Density") + ggtitle("Angles Direct") + 
-  scale_x_continuous("", limits = c(-180, 180), breaks = seq(-180, 180, by=20), 
-                     labels = seq(-180, 180, by=20))+
-  facet_wrap(~id)
+ggplot(trk, aes(x = dir_rel, y = ..density..)) + geom_histogram(breaks = seq(-180, 180, by =
+                                                                               20)) +
+  coord_polar(start = 0) + theme_minimal() +
+  scale_fill_brewer() + ylab("Density") + ggtitle("Angles Direct") +
+  scale_x_continuous(
+    "",
+    limits = c(-180, 180),
+    breaks = seq(-180, 180, by = 20),
+    labels = seq(-180, 180, by = 20)
+  ) +
+  facet_wrap( ~ id)
 
 #' ### Turning angles as histograms
 #+fig.height=12, fig.width=12

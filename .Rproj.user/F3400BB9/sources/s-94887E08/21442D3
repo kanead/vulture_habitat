@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556810206386.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "21442D3",
+    "lastKnownWriteTime" : 1556531197,
+    "last_content_update" : 1556812007535,
+    "path" : "~/Science/Conferences/Movement ecology workshop/MovebankWorkshop2019/Rscripts/EnvDATAvizAnimate.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "90,43",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
