@@ -184,7 +184,7 @@ luid<-length(uid) # number of unique individuals
 for(i in 1:luid){
   # Subset individuals & regularize track
   temp<-temptrk%>% filter(id==uid[i]) %>% 
-    track_resample(rate=hours(round(timestats$median[i])), 
+    track_resample(rate=hours(1), 
                    tolerance=minutes(10)) #' tolerance is 10 minutes
   
   # Get rid of any bursts without at least 2 points
