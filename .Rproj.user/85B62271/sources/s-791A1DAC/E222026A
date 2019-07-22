@@ -5,7 +5,7 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "2463800939",
+    "hash" : "0",
     "id" : "E222026A",
     "lastKnownWriteTime" : 1549901030,
     "last_content_update" : 1549901030403,
@@ -13,7 +13,7 @@
     "project_path" : "code/3. model_fitting_ck_tanz.R",
     "properties" : {
         "cursorPosition" : "81,70",
-        "scrollLine" : "60"
+        "scrollLine" : "0"
     },
     "relative_order" : 3,
     "source_on_save" : false,
