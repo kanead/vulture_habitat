@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1563878391440.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1433313565",
+    "id" : "DC8152B9",
+    "lastKnownWriteTime" : 1547824706,
+    "last_content_update" : 1547824706,
+    "path" : "~/Methods/Movebank/Rscripts/TestVignetteMovebank2018.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "45,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
