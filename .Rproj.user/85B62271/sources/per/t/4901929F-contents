@@ -93,11 +93,14 @@ nesttrk
 #' We can add a columns to each nested column of data using purrr::map
 trk <- trk %>% nest(-id) %>%
   mutate(
-    dir_abs = map(data, direction_abs, full_circle = TRUE, zero = "N"),
-    dir_rel = map(data, direction_rel),
+    dir_abs = map(data, ~ direction_abs(., full_circle = TRUE, zero = "N") 
+                  %>% as_degree()) ,
+    dir_rel = map(data, ~ direction_rel(.) 
+                  %>% as_degree()),
     sl = map(data, step_lengths),
     nsd_ = map(data, nsd)
   ) %>% unnest()
+
 
 #' Now, calculate month, year, hour, week of each observation and append these to the dataset
 #' Unlike the movement charactersitics, these calculations can be done all at once,
@@ -148,8 +151,8 @@ ggsave("plots/ck_tanz_net_disp.png")
 #' ### Absolute angles (for each movement) relative to North
 #' We could use a rose diagram (below) to depict the distribution of angles.
 #+fig.height=12, fig.width=12
-ggplot(trk_map, aes(x = dir_abs, y = ..density..)) + geom_histogram(breaks = seq(0, 360, by =
-                                                                                   20)) +
+ggplot(trk, aes(x = dir_abs, y = ..density..)) + 
+  geom_histogram(breaks = seq(0, 360, by = 20)) +
   coord_polar(start = 0) + theme_minimal() +
   scale_fill_brewer() + ylab("Density") + ggtitle("Angles Direct") +
   scale_x_continuous(
@@ -166,8 +169,8 @@ ggplot(trk_map, aes(x = dir_abs, y = ..density..)) + geom_histogram(breaks = seq
 #' indicates the animal turned around (but note, resting + measurement error often can
 #' make it look like the animal turned around).
 #+fig.height=12, fig.width=12
-ggplot(trk, aes(x = dir_rel, y = ..density..)) + geom_histogram(breaks = seq(-180, 180, by =
-                                                                               20)) +
+ggplot(trk, aes(x = dir_rel, y = ..density..)) +
+  geom_histogram(breaks = seq(-180, 180, by = 20)) +
   coord_polar(start = 0) + theme_minimal() +
   scale_fill_brewer() + ylab("Density") + ggtitle("Angles Direct") +
   scale_x_continuous(
@@ -176,12 +179,12 @@ ggplot(trk, aes(x = dir_rel, y = ..density..)) + geom_histogram(breaks = seq(-18
     breaks = seq(-180, 180, by = 20),
     labels = seq(-180, 180, by = 20)
   ) +
-  facet_wrap(~ id)
+  facet_wrap( ~ id)
 
 #' ### Turning angles as histograms
 #+fig.height=12, fig.width=12
-ggplot(trk, aes(x = dir_rel)) +  geom_histogram(breaks = seq(-180, 180, by =
-                                                               20)) +
+ggplot(trk, aes(x = dir_rel)) +
+  geom_histogram(breaks = seq(-180, 180, by = 20)) +
   theme_minimal() +
   scale_fill_brewer() + ylab("Count") + ggtitle("Angles Relative") +
   scale_x_continuous(
@@ -189,7 +192,7 @@ ggplot(trk, aes(x = dir_rel)) +  geom_histogram(breaks = seq(-180, 180, by =
     limits = c(-180, 180),
     breaks = seq(-180, 180, by = 20),
     labels = seq(-180, 180, by = 20)
-  ) + facet_wrap( ~ id, scales = "free")
+  ) + facet_wrap(~ id, scales = "free")
 
 #' We can also use lat, long, which will allow us to determine
 #' time of day 
