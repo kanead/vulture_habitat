@@ -1,0 +1,32 @@
+#' https://www.loughs-agency.org/wp-content/uploads/2017/03/Sea-Trout-Status-Report-2016.pdf
+#' Length-Body Mass Relationships, length in mm, weight in grams
+L <- c(250, 400)
+M <- 0.00007 * L ^ 2.6609
+M
+
+#' Temporal variation in sea trout Salmo trutta life history traits in the Erriff River, western Ireland
+# 'Fecundity (number of eggs deposited) at size (1 cm length classes) for kelts was
+#' calculated using the equation Fecundity = 60.67 × Length − 1238.49, derived for Erriff
+#' sea trout in 1985 (O’Farrell et al. 1989).
+L_cm <- c(25, 40)
+Fec <- 60.67 * L_cm - 1238.49
+Fec
+
+#' Length-weight relationships for common freshwater fish species in Irish lakes and rivers
+#' Length-Body Mass Relationships, length in cm, weight in grams
+#' You need to raise your intercept to whatever base you're using but not your slope.
+#' Values for lakes
+a_lake <- 10 ^ -1.877
+b_lake <-  2.951
+L_cm <- c(25, 40, 60)
+
+W <- a_lake * L_cm ^ b_lake
+W
+
+#' Values for rivers
+a_river <- 10 ^ -1.912
+b_river <- 3.001
+L_cm <- c(25, 40, 60)
+
+W <- a_river * L_cm ^ b_river
+W

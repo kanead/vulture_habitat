@@ -28,10 +28,12 @@ levels(factor(ck_tanz_data$id))
 
 #' all of the data is in the format of day-month-year
 #' time zone is UTC by default
-#' looks like the recorder starts at 4am UTC and records every hour until 5pm
-#' one other GPS fix is taken at 22:00
+#' raw data is 2 hours off the real time
+#' CK said the recorder started at 6am with hourly points
+#' including a relocation at midnight
+
 ck_tanz_data$New_time <-
-  parse_date_time(x = ck_tanz_data$time, c("%d/%m/%Y %H:%M"))
+  parse_date_time(x = ck_tanz_data$time, c("%d/%m/%Y %H:%M"), tz = "africa/dar_es_salaam") + hours(2)
 
 # keep only the new time data
 ck_tanz_data <-
@@ -59,7 +61,7 @@ max_time <- ck_tanz_data %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
 
 #' determine the length of time each bird was tracked for
-difftime(max_time$time,min_time$time,units="days")
+difftime(max_time$time, min_time$time, units = "days")
 
 # try the amt package
 trk <-
@@ -73,7 +75,8 @@ trk <-
     crs = CRS("+init=epsg:4326")
   ) %>%
   transform_coords(
-    sp::CRS( #' we can transform the CRS of the data to an equal area projection
+    sp::CRS(
+      #' we can transform the CRS of the data to an equal area projection
       "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
@@ -93,9 +96,12 @@ nesttrk
 #' We can add a columns to each nested column of data using purrr::map
 trk <- trk %>% nest(-id) %>%
   mutate(
-    dir_abs = map(data, ~ direction_abs(., full_circle = TRUE, zero = "N") 
-                  %>% as_degree()) ,
-    dir_rel = map(data, ~ direction_rel(.) 
+    dir_abs = map(
+      data,
+      ~ direction_abs(., full_circle = TRUE, zero = "N")
+      %>% as_degree()
+    ) ,
+    dir_rel = map(data, ~ direction_rel(.)
                   %>% as_degree()),
     sl = map(data, step_lengths),
     nsd_ = map(data, nsd)
@@ -125,7 +131,7 @@ trk
 
 #' look at net-squared displacement
 ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
-  facet_wrap( ~ id, scales = "free")
+  facet_wrap(~ id, scales = "free")
 
 #' some data points look a little off
 #' we can identify them to investiage further and remove them
@@ -137,21 +143,20 @@ trk <- trk  %>%
 
 #' plot it again
 ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
-  facet_wrap( ~ id, scales = "free")
+  facet_wrap(~ id, scales = "free")
 
 #' export the plot
-ck_tanz_net_disp <- ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
-  facet_wrap( ~ id, scales = "free")
+ck_tanz_net_disp <-
+  ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
+  facet_wrap(~ id, scales = "free")
 
-ggsave("plots/ck_tanz_net_disp.pdf")
-ggsave("plots/ck_tanz_net_disp.png")
-
-
+# ggsave("plots/ck_tanz_net_disp.pdf")
+# ggsave("plots/ck_tanz_net_disp.png")
 
 #' ### Absolute angles (for each movement) relative to North
 #' We could use a rose diagram (below) to depict the distribution of angles.
 #+fig.height=12, fig.width=12
-ggplot(trk, aes(x = dir_abs, y = ..density..)) + 
+ggplot(trk, aes(x = dir_abs, y = ..density..)) +
   geom_histogram(breaks = seq(0, 360, by = 20)) +
   coord_polar(start = 0) + theme_minimal() +
   scale_fill_brewer() + ylab("Density") + ggtitle("Angles Direct") +
@@ -161,7 +166,7 @@ ggplot(trk, aes(x = dir_abs, y = ..density..)) +
     breaks = seq(0, 360, by = 20),
     labels = seq(0, 360, by = 20)
   ) +
-  facet_wrap(~ id)
+  facet_wrap( ~ id)
 
 #' ### Turning angles
 #'
@@ -179,7 +184,7 @@ ggplot(trk, aes(x = dir_rel, y = ..density..)) +
     breaks = seq(-180, 180, by = 20),
     labels = seq(-180, 180, by = 20)
   ) +
-  facet_wrap( ~ id)
+  facet_wrap(~ id)
 
 #' ### Turning angles as histograms
 #+fig.height=12, fig.width=12
@@ -192,18 +197,29 @@ ggplot(trk, aes(x = dir_rel)) +
     limits = c(-180, 180),
     breaks = seq(-180, 180, by = 20),
     labels = seq(-180, 180, by = 20)
-  ) + facet_wrap(~ id, scales = "free")
+  ) + facet_wrap( ~ id, scales = "free")
 
 #' We can also use lat, long, which will allow us to determine
-#' time of day 
-trk <- mk_track(ck_tanz_data, .x=long, .y=lat, .t=time, id = id, 
-                crs = CRS("+init=epsg:4326"))
+#' time of day
+trk_ll <- mk_track(
+  ck_tanz_data,
+  .x = long,
+  .y = lat,
+  .t = time,
+  id = id,
+  crs = CRS("+init=epsg:4326")
+)
 
 # Now it is easy to calculate day/night with either movement track
-trk <- trk %>% time_of_day()
+trk_ll <- trk_ll %>% time_of_day()
+
+#' can verify with this site
+#' https://keisan.casio.com/exec/system/1224686065
+#' amt says 2015-09-15 06:00:00 35.02417 -7.78217 is at night
+#' website confirms this with sunrise at 06:33
 
 #' We can add a columns to each nested column of data using purrr::map
-trk <- trk %>% nest(-id) %>%
+trk_ll <- trk_ll %>% nest(-id) %>%
   mutate(
     dir_abs = map(data, direction_abs, full_circle = TRUE, zero = "N"),
     dir_rel = map(data, direction_rel),
@@ -212,14 +228,12 @@ trk <- trk %>% nest(-id) %>%
   ) %>% unnest()
 
 
- #+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
-ggplot(trk, aes(x = tod_, y = log(sl))) + 
-  geom_boxplot()+geom_smooth()+facet_wrap(~id)
+#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
+ggplot(trk_ll, aes(x = tod_, y = log(sl))) +
+  geom_boxplot() + geom_smooth() + facet_wrap( ~ id)
 
-#' Now, we can transform back to geographic coordinates
-trk <- transform_coords(trk, CRS("+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"))
-
-#' turn back to lat long 
+#' We can map the data
+#' turn back to lat long
 # try the amt package
 trk_map <-
   mk_track(
@@ -248,19 +262,23 @@ leaflet() %>% addTiles() %>%
   )
 
 #' plot all data on one map
-ggplot(trk_map, aes(x=x_, y=y_, color=as.factor(id)))+
+ggplot(trk_map, aes(x = x_, y = y_, color = as.factor(id))) +
   geom_point() + xlab ("longitude") + ylab ("latitude")
 
 library(ggmap)
 
-qmplot(x_, y_, data = trk_map, maptype = "toner-lite", color = I("red"))
+qmplot(x_,
+       y_,
+       data = trk_map,
+       maptype = "toner-lite",
+       color = I("red"))
 
-#' Calculate home range size for data that is not regularised 
+#' Calculate home range size for data that is not regularised
 
 #' convert our regularised data back into a trk type data frame
 mcps <- trk %>% nest(-id) %>%
   mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, mcparea) %>% unnest() 
+  select(id, mcparea) %>% unnest()
 
 mcps$area <- mcps$area / 1000000
 mcps %>% arrange(id)
@@ -274,16 +292,13 @@ kde <- trk %>% nest(-id) %>%
   mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
   select(id, kdearea) %>% unnest()
 
-kde$kdearea <-  kde$kdearea / 1000000 
+kde$kdearea <-  kde$kdearea / 1000000
 kde %>% arrange(id)
 
 
 #+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
 ggplot(kde, aes(x = id, y = kdearea)) + geom_point() +
   geom_smooth()
-
-
-
 
 #' ## SSF prep
 #'
@@ -319,7 +334,8 @@ trk <- filter(trk, species == "wb")
 trk
 levels(as.factor(trk$species))
 
-# need to run timestats again for the subsetted dataframe so that the IDs match up below
+#' need to run timestats again for the subsetted dataframe so that the IDs match up below
+#' because we removed everything that wasn't a white back
 (timestats <-
     trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
     dplyr::select(id, sr) %>% unnest)
@@ -398,11 +414,18 @@ ssfdat
 #' You could also calculate the midpoint of the timestep like this:
 #' data$timestamp.midpoint <- begintime + (endtime-begintime)/2
 #'
-#' # we want the x2_ and y2_ columns for Movebank
+#' we want the x2_ and y2_ columns for Movebank
 head(ssfdat)
 ncol(ssfdat)
-ssfdat2 <- SpatialPointsDataFrame(ssfdat[, c("x2_", "y2_")], ssfdat,
-                                  proj4string = CRS("+proj=longlat +datum=WGS84"))
+ssfdat2 <- SpatialPointsDataFrame(
+  ssfdat[, c("x2_", "y2_")],
+  ssfdat,
+  proj4string = CRS(
+    "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+  )
+)
+
+#' converts the end point of each step into long and lat
 ssf.df <-
   data.frame(spTransform(ssfdat2, CRS("+proj=longlat +datum=WGS84")))
 
@@ -412,11 +435,23 @@ names(ssf.df)[names(ssf.df) == 'x2_.1'] <- 'location-long'
 names(ssf.df)[names(ssf.df) == 'y2_.1'] <- 'location-lat'
 head(ssf.df)
 
+#' can plot a track to make sure it looks ok after all the converting
+leaflet() %>% addTiles() %>%
+  addCircleMarkers(
+    data = filter(
+      ssf.df,
+      individual.local.identifier == "#199122325" & case_ == "TRUE"
+    ),
+    lat = ~ ssf.df[, 15],
+    lng = ~ ssf.df[, 14],
+    color = "blue"
+  )
+
 ssf.df$timestamp <- ssf.df$t1_
 ssf.df %>% select('location-lat', x1_, x2_, y1_, y2_, 'location-long') %>% head
 
 
-#' These points then need to be annotated prior to fitting ssfs. Let's
+#' These points then need to be annotated prior to fitting ssfs.
 #' Can subset to certain essential columns so as take up less space, making it easier to annotate (and also possible to upload to github)
 ssf.df.out <-
   ssf.df %>% select(
@@ -430,58 +465,5 @@ head(ssf.df.out)
 write.csv(ssf.df.out, file = "for_annotation/CorinneSSFannotate.csv", row.names = FALSE)
 
 #' we can export the whole file with all of the extra columns we added
+head(ssf.df)
 write.csv(ssf.df, file = "amt_tracks/CorinneSSFAll.csv", row.names = FALSE)
-
-#' ### Space use (MCP or KDE) by week, month, and year
-#'
-#' Note:  this code will only work for your critters if you
-#' have multiple observations for each combination of
-#' (month, year).  If you don't have many observations, you could
-#' try:  nest(-id, -year) and unnest(id,year)
-#' mcps.week<-trk %>% nest(-id,-year,  -month, -week) %>%
-#' mutate(mcparea = map(data, ~hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
-#'  select(id, year, month, week, mcparea) %>% unnest()
-
-#' convert our regularised data back into a trk type data frame
-home_range_data <-
-  ssfdat %>% filter(case_ == "TRUE") %>% select(x1_, y1_, t1_, id) %>% group_by(id)
-
-home_range_trk <-
-  mk_track(
-    home_range_data,
-    .x = x1_,
-    .y = y1_,
-    .t = t1_,
-    id = id,
-    crs = CRS("+init=epsg:4326")
-  )
-
-
-mcps <- home_range_trk %>% nest(-id) %>%
-  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, mcparea) %>% unnest()
-
-#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
-ggplot(mcps, aes(x = id, y = area)) + geom_point() +
-  geom_smooth()
-
-#' Same for KDE
-kde <- home_range_trk %>% nest(-id) %>%
-  mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, kdearea) %>% unnest()
-
-#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
-ggplot(kde, aes(x = id, y = kdearea)) + geom_point() +
-  geom_smooth()
-
-
-#' map the data
-library(leaflet)
-levels(as.factor(home_range_data$id))
-leaflet() %>% addTiles() %>%
-  addCircleMarkers(
-    data = filter(home_range_data, id == "163113"),
-    lat = ~ y1_,
-    lng = ~ x1_,
-    color = "blue"
-  )
