@@ -1,21 +1,21 @@
 {
     "collab_server" : "",
     "contents" : "",
-    "created" : 1556702587820.000,
+    "created" : 1564746242226.000,
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1170541599",
-    "id" : "F2029292",
-    "lastKnownWriteTime" : 1563543884,
-    "last_content_update" : 1563543884018,
+    "hash" : "4099098716",
+    "id" : "D7926D0C",
+    "lastKnownWriteTime" : 1564749186,
+    "last_content_update" : 1564749186576,
     "path" : "~/Science/Manuscripts/vulture_habitat/code/2. prep_swazi.R",
     "project_path" : "code/2. prep_swazi.R",
     "properties" : {
-        "cursorPosition" : "383,37",
-        "scrollLine" : "380"
+        "cursorPosition" : "254,0",
+        "scrollLine" : "243"
     },
-    "relative_order" : 3,
+    "relative_order" : 4,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

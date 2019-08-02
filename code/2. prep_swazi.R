@@ -53,10 +53,8 @@ data.frame(min_time)
 max_time <- swazi_data %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
 
-#' plot the tracks 
-ggplot(swazi_data, aes(x = long,
-                       y = lat)) + geom_point() +
-  facet_wrap(~id, scales = "free")
+#' determine the length of time each bird was tracked for
+difftime(max_time$time, min_time$time, units = "days")
 
 #' try the amt package 
 trk <-
@@ -74,8 +72,9 @@ trk <-
     )
   )
 
-# Now it is easy to calculate day/night with either movement track
-trk <- trk %>% time_of_day()
+#' summarise the sampling rate
+trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
+  dplyr::select(id, sr) %>% unnest %>% arrange(id)
 
 
 #' Save the class here (and apply it later after adding columns to the 
@@ -87,11 +86,18 @@ nesttrk<-trk%>%nest(-id)
 nesttrk
 
 #' We can add a columns to each nested column of data using purrr::map
-trk<-trk %>% nest(-id) %>% 
-  mutate(dir_abs = map(data, amt::direction_abs,full_circle=TRUE, zero="N"), 
-         dir_rel = map(data, amt::direction_rel), 
-         sl = map(data, amt::step_lengths),
-         nsd_=map(data, amt::nsd))%>%unnest()
+trk <- trk %>% nest(-id) %>%
+  mutate(
+    dir_abs = map(
+      data,
+      ~ direction_abs(., full_circle = TRUE, zero = "N")
+      %>% as_degree()
+    ) ,
+    dir_rel = map(data, ~ direction_rel(.)
+                  %>% as_degree()),
+    sl = map(data, step_lengths),
+    nsd_ = map(data, nsd)
+  ) %>% unnest()
 
 #' Now, calculate month, year, hour, week of each observation and append these to the dataset
 #' Unlike the movement charactersitics, these calculations can be done all at once, 
@@ -113,6 +119,17 @@ class(trk)<-trk.class
 #' Lets take a look at what we created
 trk <- trk %>% group_by(id)
 trk
+
+#' look at net-squared displacement
+ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
+  facet_wrap(~ id, scales = "free")
+
+#' export the plot
+swazi_net_disp <- ggplot(trk, aes(x = t_, y=nsd_)) + geom_point()+
+  facet_wrap(~id, scales="free")
+
+ggsave("plots/swazi_net_disp.pdf")
+ggsave("plots/swazi_net_disp.png")
 
 #' ### Absolute angles (for each movement) relative to North
 #' We could use a rose diagram (below) to depict the distribution of angles.
@@ -158,39 +175,81 @@ ggplot(trk, aes(x = dir_rel)) +  geom_histogram(breaks = seq(-180, 180, by =
     labels = seq(-180, 180, by = 20)
   ) + facet_wrap( ~ id, scales = "free")
 
-#' compare to moveHMM
-library(moveHMM)
-df <- data.frame(ID = trk$id == "ID1", x = trk$x_, y = trk$y_)
-moveHMM::prepData(df, type = "LL")$angle
-hmm_turning_angle <- direction_rel(trk)
 
-#' look at net-squared displacement
-ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
-  facet_wrap( ~ id, scales = "free")
+#' We can also use lat, long, which will allow us to determine
+#' time of day
+trk_ll <- mk_track(
+  ck_tanz_data,
+  .x = long,
+  .y = lat,
+  .t = time,
+  id = id,
+  crs = CRS("+init=epsg:4326")
+)
 
-#' export the plot
-swazi_net_disp <- ggplot(trk, aes(x = t_, y=nsd_)) + geom_point()+
-  facet_wrap(~id, scales="free")
+# Now it is easy to calculate day/night with either movement track
+trk_ll <- trk_ll %>% time_of_day()
 
-ggsave("plots/swazi_net_disp.pdf")
-ggsave("plots/swazi_net_disp.png")
+#' can verify with this site
+#' https://keisan.casio.com/exec/system/1224686065
 
-#' home range plots
-#' MCP
-ggplot(mcps.week, aes(x = week, y = area, colour = factor(year))) +
-  geom_point() +
-  geom_smooth() + facet_wrap(~id, scales="free")
+#' We can add a columns to each nested column of data using purrr::map
+trk_ll <- trk_ll %>% nest(-id) %>%
+  mutate(
+    dir_abs = map(data, direction_abs, full_circle = TRUE, zero = "N"),
+    dir_rel = map(data, direction_rel),
+    sl = map(data, step_lengths),
+    nsd_ = map(data, nsd)
+  ) %>% unnest()
 
-#' Kernel utilisation distributions 
-kde.week <- trk %>%
-  mutate(year = year(t_), month = month(t_), week = week(t_)) %>%
-  group_by(id, year, month, week) %>% nest() %>%
-  mutate(kdearea = map(data, ~ hr_kde(., levels=c(0.95)) %>% hr_area)) %>%
-  select(id, year, month, week, kdearea) %>% unnest()
 
-ggplot(kde.week, aes(x = week, y = kdearea, colour = factor(year))) +
-  geom_point() +
-  geom_smooth() + facet_wrap(~id, scales = "free")
+#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
+ggplot(trk_ll, aes(x = tod_, y = log(sl))) +
+  geom_boxplot() + geom_smooth() + facet_wrap( ~ id)
+
+#' We can map the data
+#' turn back to lat long
+# try the amt package
+trk_map <-
+  mk_track(
+    swazi_data,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  )
+
+library(ggmap)
+
+qmplot(x_,
+       y_,
+       data = trk_map,
+       maptype = "toner-lite",
+       color = I("red"))
+
+#' Calculate home range size for data that is not regularised
+
+#' convert our regularised data back into a trk type data frame
+mcps <- trk %>% nest(-id) %>%
+  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, mcparea) %>% unnest()
+
+mcps$area <- mcps$area / 1000000
+mcps %>% arrange(id)
+
+#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
+ggplot(mcps, aes(x = id, y = area)) + geom_point() +
+  geom_smooth()
+
+#' Same for KDE
+kde <- trk %>% nest(-id) %>%
+  mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, kdearea) %>% unnest()
+
+kde$kdearea <-  kde$kdearea / 1000000
+kde %>% arrange(id)
 
 
 #' ## SSF prep

@@ -29,15 +29,31 @@ levels(factor(ga_nam$id))
 # all of the data is in the format of day-month-year 
 ga_nam$New_time<-parse_date_time(x=ga_nam$time,c("%d/%m/%Y %H:%M"))
 
-# keep only the new time data
+#' all of the data is in the format of day-month-year
+#' time zone is UTC by default
+ga_nam$New_time <-
+  parse_date_time(x = ga_nam$time, c("%d/%m/%Y %H:%M"))
+
+#' keep only the new time data
 ga_nam <- select(ga_nam, New_time,long,lat,id,species,study)
 ga_nam <- rename(ga_nam, time = New_time)
 ga_nam
 
+#' filter extreme data based on a speed threshold
+#' based on vmax which is km/hr
+#' time needs to be labelled DateTime for these functions to work
+names(ga_nam)[names(ga_nam) == 'time'] <- 'DateTime'
+SDLfilterData <-
+  ddfilter.speed(data.frame(ga_nam), vmax = 70, method = 1)
+length(SDLfilterData$DateTime)
+
+#' rename everything as before
+ga_nam <- SDLfilterData
+names(ga_nam)[names(ga_nam) == 'DateTime'] <- 'time'
+
 # check the minimum time and the maximum time
 min_time <- ga_nam %>% group_by(id) %>% slice(which.min(time))
 data.frame(min_time)
-
 
 max_time <- ga_nam %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
@@ -47,28 +63,35 @@ data.frame(max_time)
 #' We can delete anything that comes after a certain date
 ga_nam <- ga_nam %>% filter(time < "2019-01-01")
 
+#' determine the length of time each bird was tracked for
+difftime(max_time$time, min_time$time, units = "days")
+
 #' check the dates again
 max_time <- ga_nam %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
 
-#' filter extreme data based on a speed threshold 
-#' based on vmax which is km/hr
-#' time needs to be labelled DateTime for these functions to work
-library(SDLfilter)
-names(ga_nam)[names(ga_nam) == 'time'] <- 'DateTime'
-SDLfilterData<-ddfilter.speed(data.frame(ga_nam), vmax = 60, method = 1)
-length(SDLfilterData$DateTime)
-
-#' rename everything as before
-ga_nam <- SDLfilterData
-names(ga_nam)[names(ga_nam) == 'DateTime'] <- 'time'
 
 # try the amt package 
-trk <- mk_track(ga_nam, .x=long, .y=lat, .t=time, id = id, species=species,
-                crs = CRS("+init=epsg:4326"))
+trk <-
+  mk_track(
+    ga_nam,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  ) %>%
+  transform_coords(
+    sp::CRS(
+      #' we can transform the CRS of the data to an equal area projection
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+    )
+)
 
-# Now it is easy to calculate day/night with either movement track
-trk <- trk %>% time_of_day()
+#' summarise the sampling rate
+trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
+  dplyr::select(id, sr) %>% unnest %>% arrange(id)
 
 
 #' Save the class here (and apply it later after adding columns to the 
@@ -80,14 +103,21 @@ nesttrk<-trk%>%nest(-id)
 nesttrk
 
 #' We can add a columns to each nested column of data using purrr::map
-trk<-trk %>% nest(-id) %>% 
-  mutate(dir_abs = map(data, direction_abs,full_circle=TRUE, zero="N"), 
-         dir_rel = map(data, direction_rel), 
-         sl = map(data, step_lengths),
-         nsd_=map(data, nsd))%>%unnest()
+trk <- trk %>% nest(-id) %>%
+  mutate(
+    dir_abs = map(
+      data,
+      ~ direction_abs(., full_circle = TRUE, zero = "N")
+      %>% as_degree()
+    ) ,
+    dir_rel = map(data, ~ direction_rel(.)
+                  %>% as_degree()),
+    sl = map(data, step_lengths),
+    nsd_ = map(data, nsd)
+  ) %>% unnest()
 
 #' Now, calculate month, year, hour, week of each observation and append these to the dataset
-#' Unlike the movement charactersitics, these calculations can be done all at once, 
+#' Unlike the movement charactersitics, these calculations can be done all at once,
 #' since they do not utilize successive observations (like step lengths and turn angles do).
 trk<-trk%>% 
   mutate(
@@ -114,7 +144,7 @@ ggplot(trk, aes(x = t_, y=nsd_)) + geom_point()+
 #' some data points look a little off
 #' we can identify them to investiage further and remove them
 #' if needs be
-filter(trk,id=="5784" & nsd_ < 10)
+filter(trk,id=="5784" & nsd_ < 1e+11)
 
 trk<- trk  %>%
   filter(!((id=="5784" & nsd_ < 10)))
@@ -134,6 +164,29 @@ ga_nam_disp <- ggplot(trk, aes(x = t_, y=nsd_)) + geom_point()+
 
 ggsave("plots/ga_nam_net_disp.pdf")
 ggsave("plots/ga_nam_net_disp.png")
+
+
+library(ggmap)
+#' We can map the data
+#' turn back to lat long
+# try the amt package
+trk_map <-
+  mk_track(
+    ga_nam,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  )
+
+test <- filter(trk_map, id == "5784")
+qmplot(x_,
+       y_,
+       data = test,
+       maptype = "toner-lite",
+       color = I("red"))
 
 #' ## SSF prep
 #' 
