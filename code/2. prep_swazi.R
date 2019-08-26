@@ -34,6 +34,12 @@ swazi_data <- select(swazi_data, New_time,long,lat,id,species,study)
 swazi_data <- rename(swazi_data, time = New_time)
 swazi_data
 
+#' estimate vmax for threshold speed 
+#' names(swazi_data)[names(swazi_data) == 'time'] <- 'DateTime'
+#' speed.est.data <- swazi_data %>% filter(id == "ID2") %>%  select(id,DateTime,lat,long)
+#' speed.est.data$qi = 5
+#' est.vmax(sdata = data.frame(speed.est.data))
+
 #' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
@@ -49,12 +55,11 @@ names(swazi_data)[names(swazi_data) == 'DateTime'] <- 'time'
 min_time <- swazi_data %>% group_by(id) %>% slice(which.min(time))
 data.frame(min_time)
 
-
 max_time <- swazi_data %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
 
 #' determine the length of time each bird was tracked for
-difftime(max_time$time, min_time$time, units = "days")
+duration <- difftime(max_time$time, min_time$time, units = "days");duration
 
 #' try the amt package 
 trk <-
@@ -68,14 +73,79 @@ trk <-
     crs = CRS("+init=epsg:4326"))  %>%
   transform_coords(
     sp::CRS( #' we can transform the CRS of the data to an equal area projection
+      #' https://epsg.io/102022
       "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 
-#' summarise the sampling rate
-trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
-  dplyr::select(id, sr) %>% unnest %>% arrange(id)
 
+#' summarise the sampling rate
+data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
+  dplyr::select(id, sr) %>% unnest %>% arrange(id) ; sampling_rate
+
+
+#' Calculate home range size for data that is not regularised
+mcps <- trk %>% nest(-id) %>%
+  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, mcparea) %>% unnest()
+
+mcps$area <- mcps$area / 1000000
+mcp_95 <- mcps %>% arrange(id)
+
+#' Same for KDE
+kde <- trk %>% nest(-id) %>%
+  mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, kdearea) %>% unnest()
+
+kde$kdearea <-  kde$kdearea / 1000000
+kde_95 <- kde %>% arrange(id)
+
+
+#' combine the summary stats
+data_summary$duration <- duration
+data_summary$min_time <- min_time$time
+data_summary$max_time <- max_time$time
+data_summary$kde <- kde_95$kdearea
+data_summary$mcps <- mcp_95$area
+data_summary$species <- min_time$species
+data_summary
+
+#' can export this data summary 
+#' write.csv(data_summary, file="track_resolution_summary/swazi_data_summary.csv", row.names = FALSE)
+
+#' We can map the data
+#' turn back to lat long
+trk_map <-
+  mk_track(
+    swazi_data,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  )
+
+#' plot all of the data on the one graph
+library(ggmap)
+qmplot(x_,
+       y_,
+       data = trk_map,
+       maptype = "toner-lite",
+       colour = id)
+#  color = I("red"))
+
+#' plot each track on a separate panel using facet
+(
+  qmplot(
+    x_,
+    y_,
+    data = trk_map,
+    maptype = "toner-background",
+    colour = id
+  ) +
+    facet_wrap( ~ id)
+)
 
 #' Save the class here (and apply it later after adding columns to the 
 #' object)

@@ -1,7 +1,0 @@
-df <- c ("09/11/2015 16:00",
-         "09/11/2015 17:00",
-         "09/11/2015 22:00")
-
-parse_date_time(x = df, c("%d/%m/%Y %H:%M"))
-
-parse_date_time(x = df, c("%d/%m/%Y %H:%M"), tz = "africa/dar_es_salaam") + hours(2)

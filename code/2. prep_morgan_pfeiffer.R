@@ -64,30 +64,37 @@ morgan_data <- morgan_data %>% group_by(id)  %>%
   arrange(New_time, .by_group = TRUE)
 morgan_data
 
-# check the minimum time and the maximum time
-min_time <- morgan_data %>% group_by(id) %>% slice(which.min(New_time))
-data.frame(min_time)
-
-
-max_time <- morgan_data %>% group_by(id) %>% slice(which.max(New_time))
-data.frame(max_time)
-
 # keep only the new time data
 morgan_data <- select(morgan_data, New_time,long,lat,id,species,study)
 morgan_data <- rename(morgan_data, time = New_time)
 
+#' estimate vmax for threshold speed 
+#' names(morgan_data)[names(morgan_data) == 'time'] <- 'DateTime'
+#' speed.est.data <- morgan_data %>% select(id,DateTime,lat,long)
+#' speed.est.data$qi = 5
+#' est.vmax(sdata = data.frame(speed.est.data))
 
 #' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
 library(SDLfilter)
 names(morgan_data)[names(morgan_data) == 'time'] <- 'DateTime'
-SDLfilterData<-ddfilter.speed(data.frame(morgan_data), vmax = 60, method = 1)
+SDLfilterData<-ddfilter.speed(data.frame(morgan_data), vmax = 70, method = 1)
 length(SDLfilterData$DateTime)
 
 #' rename everything as before
 morgan_data <- SDLfilterData
 names(morgan_data)[names(morgan_data) == 'DateTime'] <- 'time'
+
+# check the minimum time and the maximum time
+min_time <- morgan_data %>% group_by(id) %>% slice(which.min(time))
+data.frame(min_time)
+
+max_time <- morgan_data %>% group_by(id) %>% slice(which.max(time))
+data.frame(max_time)
+
+#' determine the length of time each bird was tracked for
+duration<-difftime(max_time$time, min_time$time, units = "days");duration
 
 # try the amt package
 trk <-
@@ -99,7 +106,83 @@ trk <-
     id = id,
     species = species,
     crs = CRS("+init=epsg:4326")
+  ) %>%
+  transform_coords(
+    sp::CRS(
+      #' we can transform the CRS of the data to an equal area projection
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+    )
   )
+
+#' summarise the sampling rate
+data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
+  dplyr::select(id, sr) %>% unnest %>% arrange(id) ; sampling_rate
+
+
+#' Calculate home range size for data that is not regularised
+mcps <- trk %>% nest(-id) %>%
+  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, mcparea) %>% unnest()
+
+mcps$area <- mcps$area / 1000000
+mcp_95 <- mcps %>% arrange(id)
+
+#' Same for KDE
+kde <- trk %>% nest(-id) %>%
+  mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, kdearea) %>% unnest()
+
+kde$kdearea <-  kde$kdearea / 1000000
+kde_95 <- kde %>% arrange(id)
+
+
+#' combine the summary stats
+data_summary$duration <- duration
+data_summary$min_time <- min_time$time
+data_summary$max_time <- max_time$time
+data_summary$kde <- kde_95$kdearea
+data_summary$mcps <- mcp_95$area
+data_summary$species <- min_time$species
+data_summary
+
+#' can export this data summary 
+#' write.csv(data_summary, file="track_resolution_summary/morgan_data_summary.csv", row.names = FALSE)
+
+
+#' We can map the data
+#' turn back to lat long
+trk_map <-
+  mk_track(
+    morgan_data,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  )
+
+#' plot all of the data on the one graph
+library(ggmap)
+qmplot(x_,
+       y_,
+       data = trk_map,
+       maptype = "toner-lite",
+       colour = id)
+     #  color = I("red"))
+
+#' plot each track on a separate panel using facet
+(
+  qmplot(
+    x_,
+    y_,
+    data = trk_map,
+    maptype = "toner-background",
+    colour = id
+  ) +
+    facet_wrap( ~ id)
+)
+
 
 # Now it is easy to calculate day/night with either movement track
 trk <- trk %>% time_of_day()
