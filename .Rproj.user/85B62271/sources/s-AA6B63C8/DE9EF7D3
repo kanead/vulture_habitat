@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1566900301268.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3852022242",
+    "id" : "DE9EF7D3",
+    "lastKnownWriteTime" : 1549542878,
+    "last_content_update" : 1549542878,
+    "path" : "~/Manuscripts/VultureMovementData/Clean Intermountain Data.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "12,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 14,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

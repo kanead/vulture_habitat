@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1566901218740.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2607053466",
+    "id" : "9F110840",
+    "lastKnownWriteTime" : 1566915741,
+    "last_content_update" : 1566915741049,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_ralph.R",
+    "project_path" : "code/2. prep_ralph.R",
+    "properties" : {
+        "cursorPosition" : "143,1",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 10,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,55 @@
+#' clean the Intermountain Bird Observatory data and Extract a file for each bird
+
+rm(list=ls())
+
+setwd("C:\\Users\\Adam Kane\\Documents\\Manuscripts\\VultureMovementData\\VultureMovementData")
+
+library(readxl)
+library(tidyverse)
+
+# read_excel reads both xls and xlsx files
+mydata<- read_excel("Intermountain Bird Observatory Vultures in Gorongosa National Park.xlsx")
+head(mydata)
+#' exclude non GPS sensor types
+#' the column header has a hyphen which is a problem with R so I call the column by
+#' number directly
+mydata <- filter(mydata,mydata[,38]=="gps")
+
+#' rename those confusing column names that have hyphens 
+
+names(mydata)[names(mydata) == 'location-long'] <- 'long'
+names(mydata)[names(mydata) == 'location-lat'] <- 'lat'
+names(mydata)[names(mydata) == 'tag-local-identifier'] <- 'id'
+names(mydata)[names(mydata) == 'individual-taxon-canonical-name'] <- 'species'
+names(mydata)[names(mydata) == 'timestamp'] <- 'time'
+
+#' select only those columns 
+mydata <- select(mydata,time,long,lat,id,species)
+mydata
+
+#' make species a factor level
+mydata$species<-as.factor(mydata$species)
+
+#' rename the species to something simpler 
+mydata<-mutate(mydata, species = fct_recode(species, "wb" = "Gyps africanus"))
+mydata<-mutate(mydata, species = fct_recode(species, "wh" = "Trigonoceps occipitalis"))
+levels(mydata$species)
+
+#' add a column name for the study
+mydata$study <- "inter"
+
+#' add a column name for the timezone
+mydata$gmt <- "q"
+
+#' want columns in this order: time long lat id	species	study	gmt
+head(mydata)
+
+#' group by the id column and export a csv for each
+customFun  = function(DF) {
+  write.csv(DF,paste0("",unique(DF$id),".csv"),row.names = FALSE)
+  return(DF)
+}
+
+mydata %>% 
+  group_by(id) %>% 
+  do(customFun(.))

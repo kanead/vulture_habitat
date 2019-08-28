@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1566918250861.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "157D3FCB",
+    "lastKnownWriteTime" : 1566918496,
+    "last_content_update" : 1566918496547,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_masai.R",
+    "project_path" : "code/2. prep_masai.R",
+    "properties" : {
+        "cursorPosition" : "109,2",
+        "scrollLine" : "100"
+    },
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

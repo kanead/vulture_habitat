@@ -1,0 +1,60 @@
+#' clean the AWBV from Namibia Data and Extract a file for each bird
+
+rm(list=ls())
+
+setwd("C:\\Users\\Adam Kane\\Documents\\Manuscripts\\VultureMovementData\\VultureMovementData")
+
+library(readxl)
+library(tidyverse)
+
+#' read in the data
+mydata<- read.csv("Gyps africanus Namibia.csv", header = T)
+head(mydata)
+#' exclude non GPS sensor types
+mydata <- filter(mydata,sensor.type=="gps")
+
+#' rename those confusing column names that have hyphens 
+
+names(mydata)[names(mydata) == 'location.long'] <- 'long'
+names(mydata)[names(mydata) == 'location.lat'] <- 'lat'
+names(mydata)[names(mydata) == 'individual.local.identifier'] <- 'id'
+names(mydata)[names(mydata) == 'individual.taxon.canonical.name'] <- 'species'
+names(mydata)[names(mydata) == 'timestamp'] <- 'time'
+
+#' select only those columns 
+mydata <- select(mydata,time,long,lat,id,species)
+head(mydata)
+
+#' make species a factor level
+mydata$species<-as.factor(mydata$species)
+levels(mydata$species)
+
+#' rename the species to something simpler 
+mydata$species <- "wb"
+mydata$species<-as.factor(mydata$species)
+levels(mydata$species)
+
+#' add a column name for the study
+mydata$study <- "ga_nam"
+
+#' add a column name for the timezone
+mydata$gmt <- "q"
+
+#' want columns in this order: time long lat id	species	study	gmt
+head(mydata)
+
+#' dates are getting messed up in the export
+#' specify their format here
+mydata$time<-parse_date_time(x=mydata$time,c("%Y-%m-%d %H:%M:%S"))
+mydata$time <- format(mydata$time, "%d/%m/%Y %H:%M:%S")
+head(mydata)
+
+#' group by the id column and export a csv for each
+customFun  = function(DF) {
+  write.csv(DF,paste0("",unique(DF$id),".csv"),row.names = FALSE)
+  return(DF)
+}
+
+mydata %>% 
+  group_by(id) %>% 
+  do(customFun(.))

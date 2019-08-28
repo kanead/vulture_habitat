@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1566833269926.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "413701604",
+    "id" : "3820B08E",
+    "lastKnownWriteTime" : 1566915539,
+    "last_content_update" : 1566915539325,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_ga_nam.R",
+    "project_path" : "code/2. prep_ga_nam.R",
+    "properties" : {
+        "cursorPosition" : "125,3",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

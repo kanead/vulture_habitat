@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1566911753073.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "338615750",
+    "id" : "36BAFF38",
+    "lastKnownWriteTime" : 1563456039,
+    "last_content_update" : 1563456039,
+    "path" : "~/Manuscripts/vulture_habitat/code/5. animate_data.R",
+    "project_path" : "code/5. animate_data.R",
+    "properties" : {
+        "cursorPosition" : "27,23",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 16,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

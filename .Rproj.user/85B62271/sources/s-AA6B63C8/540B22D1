@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1566904429379.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3723987199",
+    "id" : "540B22D1",
+    "lastKnownWriteTime" : 1566904506,
+    "last_content_update" : 1566904506277,
+    "path" : "~/Manuscripts/VultureMovementData/Clean GA Namibia Data.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "60,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

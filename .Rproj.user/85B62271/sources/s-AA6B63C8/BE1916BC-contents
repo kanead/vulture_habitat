@@ -1,0 +1,63 @@
+#' clean the Ralph Data and Extract a file for each bird
+
+rm(list=ls())
+
+setwd("C:\\Users\\Adam Kane\\Documents\\Manuscripts\\VultureMovementData\\VultureMovementData")
+
+library(readxl)
+library(tidyverse)
+
+#' read in the data
+mydata<- read_excel("African vultures_Ralph_GPSonly.xlsx", col_names = T)
+head(mydata)
+#' exclude non GPS sensor types and poor GPS fixes
+mydata <- filter(mydata,mydata[,16]=="gps")
+mydata <- filter(mydata,mydata[,7]=="3")
+
+#' rename those confusing column names that have hyphens 
+
+names(mydata)[names(mydata) == 'location-long'] <- 'long'
+names(mydata)[names(mydata) == 'location-lat'] <- 'lat'
+names(mydata)[names(mydata) == 'tag-local-identifier'] <- 'id'
+names(mydata)[names(mydata) == 'individual-taxon-canonical-name'] <- 'species'
+names(mydata)[names(mydata) == 'timestamp'] <- 'time'
+
+#' select only those columns 
+mydata <- select(mydata,time,long,lat,id,species)
+head(mydata)
+
+#' make species a factor level
+mydata$species<-as.factor(mydata$species)
+levels(mydata$species)
+
+#' rename the species to something simpler 
+mydata<-mutate(mydata, species = fct_recode(species, "wb" = "Gyps africanus"))
+mydata<-mutate(mydata, species = fct_recode(species, "wh" = "Trigonoceps occipitalis"))
+levels(mydata$species)
+
+levels(mydata$species)
+
+#' add a column name for the study
+mydata$study <- "ralph"
+
+#' add a column name for the timezone
+mydata$gmt <- "q"
+
+#' want columns in this order: time long lat id	species	study	gmt
+head(mydata)
+
+#' dates are getting messed up in the export
+#' specify their format here
+mydata$time<-parse_date_time(x=mydata$time,c("%Y-%m-%d %H:%M:%S"))
+mydata$time <- format(mydata$time, "%d/%m/%Y %H:%M:%S")
+head(mydata)
+
+#' group by the id column and export a csv for each
+customFun  = function(DF) {
+  write.csv(DF,paste0("",unique(DF$id),".csv"),row.names = FALSE)
+  return(DF)
+}
+
+mydata %>% 
+  group_by(id) %>% 
+  do(customFun(.))
