@@ -81,7 +81,7 @@ trk <-
 
 #' summarise the sampling rate
 data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
-  dplyr::select(id, sr) %>% unnest %>% arrange(id) ; sampling_rate
+  dplyr::select(id, sr) %>% unnest %>% arrange(id) ; data_summary
 
 
 #' Calculate home range size for data that is not regularised
@@ -114,6 +114,19 @@ data_summary
 #' can export this data summary 
 #' write.csv(data_summary, file="track_resolution_summary/swazi_data_summary.csv", row.names = FALSE)
 
+#' --- plot the home range trends over time
+mcps.week <- trk %>% nest(-id, -year,-month,-week) %>%
+  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
+  select(id, year, month, week, mcparea) %>% unnest()
+
+ggplot(mcps.week, aes(
+  x = week,
+  y = area,
+  colour = as.factor(year)
+)) + geom_point() +
+  geom_smooth() + facet_wrap( ~ id, scales = "free")
+
+#' ---
 #' We can map the data
 #' turn back to lat long
 trk_map <-
@@ -148,6 +161,8 @@ qmplot(x_,
     facet_wrap( ~ id)
 )
 
+#' ---
+#' Generate some summary plots of the data
 #' Save the class here (and apply it later after adding columns to the 
 #' object)
 trk.class<-class(trk)
@@ -181,7 +196,6 @@ trk<-trk%>%
     hour = hour(t_)
   )
 
-
 #' Now, we need to again tell R that this is a track (rather 
 #' than just a data frame)
 class(trk)
@@ -199,8 +213,8 @@ ggplot(trk, aes(x = t_, y = nsd_)) + geom_point() +
 swazi_net_disp <- ggplot(trk, aes(x = t_, y=nsd_)) + geom_point()+
   facet_wrap(~id, scales="free")
 
-ggsave("plots/swazi_net_disp.pdf")
-ggsave("plots/swazi_net_disp.png")
+# ggsave("plots/swazi_net_disp.pdf")
+# ggsave("plots/swazi_net_disp.png")
 
 #' ### Absolute angles (for each movement) relative to North
 #' We could use a rose diagram (below) to depict the distribution of angles.
@@ -278,49 +292,7 @@ trk_ll <- trk_ll %>% nest(-id) %>%
 ggplot(trk_ll, aes(x = tod_, y = log(sl))) +
   geom_boxplot() + geom_smooth() + facet_wrap( ~ id)
 
-#' We can map the data
-#' turn back to lat long
-# try the amt package
-trk_map <-
-  mk_track(
-    swazi_data,
-    .x = long,
-    .y = lat,
-    .t = time,
-    id = id,
-    species = species,
-    crs = CRS("+init=epsg:4326")
-  )
 
-library(ggmap)
-
-qmplot(x_,
-       y_,
-       data = trk_map,
-       maptype = "toner-lite",
-       color = I("red"))
-
-#' Calculate home range size for data that is not regularised
-
-#' convert our regularised data back into a trk type data frame
-mcps <- trk %>% nest(-id) %>%
-  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, mcparea) %>% unnest()
-
-mcps$area <- mcps$area / 1000000
-mcps %>% arrange(id)
-
-#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
-ggplot(mcps, aes(x = id, y = area)) + geom_point() +
-  geom_smooth()
-
-#' Same for KDE
-kde <- trk %>% nest(-id) %>%
-  mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, kdearea) %>% unnest()
-
-kde$kdearea <-  kde$kdearea / 1000000
-kde %>% arrange(id)
 
 
 #' ## SSF prep
@@ -452,113 +424,3 @@ write.csv(ssf.df.out, file="for_annotation/CorinneSSFannotate.csv", row.names = 
 write.csv(ssf.df, file="amt_tracks/CorinneSSFAll.csv", row.names = FALSE)
 
 
-#' map the data
-library(leaflet)
-levels(as.factor(home_range_data$id))
-leaflet() %>% addTiles() %>%
-  addCircleMarkers(
-    data = filter(home_range_data, id == "ID2"),
-    lat = ~ y1_,
-    lng = ~ x1_,
-    color = "blue"
-  )
-
-#' save the map## 'mapview' objects (image below)
-m <- leaflet() %>% addTiles() %>%
-  addCircleMarkers(
-    data = filter(home_range_data, id == "ID2"),
-    lat = ~ y1_,
-    lng = ~ x1_,
-    color = "blue"
-  )
-library(mapview)
-mapshot(m, file = paste0(getwd(), "/plots/Swazi_ID2.png"))
-
-#' ### Space use (MCP or KDE) by week, month, and year
-#' 
-#' Note:  this code will only work for your critters if you
-#' have multiple observations for each combination of
-#' (month, year).  If you don't have many observations, you could
-#' try:  nest(-id, -year) and unnest(id,year)
-#' mcps.week<-trk %>% nest(-id,-year,  -month, -week) %>%  
-#' mutate(mcparea = map(data, ~hr_mcp(., levels = c(0.95)) %>% hr_area)) %>% 
-#'  select(id, year, month, week, mcparea) %>% unnest()
-
-#' convert our regularised data back into a trk type data frame
-home_range_data <-
-  ssfdat %>% filter(case_ == "TRUE") %>% select(x1_, y1_, t1_, id) %>% group_by(id)
-
-home_range_trk <-
-  mk_track(
-    home_range_data,
-    .x = x1_,
-    .y = y1_,
-    .t = t1_,
-    id = id,
-    crs = CRS("+init=epsg:4326")
-  )
-
-
-#' convert to Africa Albers Equal Area Conic
-#' https://epsg.io/102022
-#' https://gis.stackexchange.com/questions/177447/defining-the-correct-aea-proj4string-for-fewsnet-rainfall-data-southern-africa
-
-coordinates(home_range_trk) <- c("x_", "y_")
-proj4string(home_range_trk) <- CRS("+proj=longlat +datum=WGS84")  
-
-res <-
-  spTransform(
-    home_range_trk,
-    CRS("+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-    )
-  )
-res_data <- data.frame(res)
-
-home_range_trk <-
-  mk_track(
-    res_data,
-    .x = x_,
-    .y = y_,
-    .t = t_,
-    id = id,
-    crs = CRS(
-      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-    )
-  )
-
-
-
-mcps <- home_range_trk %>% nest(-id) %>%
-  mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, mcparea) %>% unnest()
-
-#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
-ggplot(mcps, aes(x = id, y = area)) + geom_point() +
-  geom_smooth()
-
-#' Same for KDE
-kde <- home_range_trk %>% nest(-id) %>%
-  mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, kdearea) %>% unnest()
-
-#+fig.height=12, fig.width=12, warning=FALSE, message=FALSE
-ggplot(kde, aes(x = id, y = kdearea)) + geom_point() +
-  geom_smooth()
-
-
-#' We can add a columns to each nested column of data using purrr::map
-trk<-home_range_trk %>% nest(-id) %>% 
-  mutate(dir_abs = map(data, direction_abs,full_circle=TRUE, zero="N"), 
-         dir_rel = map(data, direction_rel), 
-         sl = map(data, step_lengths),
-         nsd_=map(data, nsd))%>%unnest()
-
-#' find the centroid
-#library(geosphere)
-#home_range_data %>% filter(id == "ID1") %>%  mean_x = mean(x1_)
-
-#mean(home_range_data$x1_[home_range_data$id == "ID1"])
-#mean(home_range_data$y1_[home_range_data$id == "ID1"])
-
-#mean(home_range_data$x1_[home_range_data$id == "ID2"])
-#mean(home_range_data$y1_[home_range_data$id == "ID2"])

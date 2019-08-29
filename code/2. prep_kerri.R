@@ -23,9 +23,16 @@ kerri_data
 # set the time column
 levels(factor(kerri_data$id))
 # can look at an individual level with 
-filter(kerri_data,id=="27233665")
+filter(kerri_data,id=="AG330")
 
-#' some data are GMT some are GMT + 2, some are unknown
+#' ---
+#' Some of Kerri's tags were used on more than one bird
+#' doubles <-c("AM234", "AG382", "AM89", "AM88", "AM87")
+#' e.g. #' AG382 deployments Adult	12/04/2010 & Juvenile	24/06/2010
+#' I remove them for now as the tracks don't seem to correspond to changes in position
+
+#' ---
+#' Some data are GMT some are GMT + 2, some are unknown
 #' GMT+2 
 #' 5008, AG313, AG314, AG329, AG330, AG331, AG332, AG349
 #' AG350, AG351, AG352, AG353, AG356, AG382, AM220, AM222, AM226, AM227, AM233, AM234, AM235, AM240, AM264
@@ -38,21 +45,22 @@ filter(kerri_data,id=="27233665")
 #' 
 #' Some data have time arranged from most recent 
 #' Ingelheim
-#' 
-#' date format for these is month-day-year 
+
+#' ---
+#' Date format for these is month-day-year 
 #' "AM222" "AM226" "AM227" "AM234" "AM235" "AM240" "AM264" "AM267" "AM272" "AM295"
 #' 
-#' date format for these is day-month-year, no seconds 
+#' Date format for these is day-month-year, no seconds 
 #' 22959306, 27230695, 27233665, 33640, 33798, 5008, AG313, AG314, AG329, AG330, Ag331, AG332, AG349, AG350
 #' AG351, AG352, AG353, AG356, AG382, AM220, AM233, AM86, AM87, AM88, AM89, Ingelheim, LFV_009, X009
 #' 
 
-group1 <- c("AM222", "AM226", "AM227", "AM234", "AM235", "AM240", "AM264", "AM267", "AM272", "AM295")
+group1 <- c("AM222", "AM226", "AM227", "AM235", "AM240", "AM264", "AM267", "AM272", "AM295")
 temp1 <- kerri_data %>% filter(id %in% group1)
 temp1$New_time<-parse_date_time(x=temp1$time,c("%m/%d/%Y %H:%M:%S"), tz = "africa/johannesburg")
 
 group2 <- c("5008", "AG313", "AG314", "AG329", "AG330", "Ag331", "AG332", "AG349", "AG350", "AG351", 
-            "AG352", "AG353", "AG356", "AG382", "AM220", "AM233", "AM86", "AM87", "AM88", "AM89")
+            "AG352", "AG353", "AG356", "AM220", "AM233", "AM86")
 temp2 <- kerri_data %>% filter(id %in% group2)
 temp2$New_time<-parse_date_time(x=temp2$time,c("%d/%m/%Y %H:%M"), tz = "africa/johannesburg")
 
@@ -64,7 +72,7 @@ temp3$New_time<-parse_date_time(x=temp3$time,c("%d/%m/%Y %H:%M"))
 kerri_data <- full_join(temp1, temp2) %>%
   full_join(., temp3) 
 
-# Morgan's data is in reverse order of time
+# Some of Kerri's data is in reverse order of time
 # sort by the bird ID and reverse the order
 kerri_data <- kerri_data %>% group_by(id)  %>% 
   arrange(New_time, .by_group = TRUE)
@@ -83,6 +91,77 @@ kerri_data <- select(kerri_data, New_time,long,lat,id,species,study)
 kerri_data <- rename(kerri_data, time = New_time)
 kerri_data
 tz(kerri_data$time)
+
+#' Kerri's metadata shows there are some data at the start of the files that are recorded before the
+#' tag was deployed on the bird, need to trim the start of these
+#' # deployment dates
+# "22959306"	"18/03/2016" same
+# "27230695"	"13/02/2016" same
+# "27233665"	"31/01/2016" same
+# "33640"	  	"27/04/2015" same
+# "33798"	  	"28/04/2015" same
+# "5008"	  	"29/09/2016" fix
+# "AG313"	  	"08/11/2009" fix
+# "AG314"	    "08/11/2009" fix
+# "AG329"	    "02/12/2009" fix
+# "AG330"   	"02/12/2009" fix
+# "AG332"	  	"21/11/2009" fix
+# "AG349"	    "02/12/2009" fix
+# "AG350"	  	"02/12/2009" fix
+# "AG351"	  	"09/12/2009" fix
+# "AG352"	  	"09/12/2009" fix
+# "AG353"	  	"17/01/2010" fix
+# "AG356"	  	"10/02/2013" fix #' looks like this date exceeds the tracking data dates
+# "AM222"	  	"02/03/2007" fix
+# "AM226"	  	"02/03/2007" fix
+# "AM227"	  	"02/03/2007" fix
+# "AM233"	  	"24/04/2006" fix
+# "AM235"	  	"15/03/2007" fix
+# "AM240"	  	"15/03/2007" fix
+# "AM264"	  	"29/01/2008" fix
+# "AM272"	  	"19/12/2007" fix
+# "AM295"	  	"27/11/2007" fix
+# "AM86"	  	"04/12/2005" fix
+# "Ingelheim"	"19/03/2012" same
+# "LFV009"		"02/04/2015"
+# "X009"			"10/04/2015"
+
+#' check the start dates by printing the first row of each bird id
+first_row <- kerri_data[!duplicated(kerri_data$id),]
+print(first_row, n = 30)
+
+filter(kerri_data, id == "AG356")
+tail(filter(kerri_data, id == "AM86"))
+
+kerri_data <- kerri_data %>% filter(
+               id == "22959306"  |
+               id == "27230695"  |
+               id == "27233665"  |
+               id == "33640"  |
+               id == "33798"  |
+               id == "Ingelheim"  |
+               id == "5008" & time >= as.Date("2016-09-29 00:00:00") | #
+               id == "AG313" & time >= as.Date("2009-11-08 00:00:00")| #
+               id == "AG314" & time >= as.Date("2009-11-08 00:00:00")| #
+               id == "AG329" & time >= as.Date("2009-12-02 00:00:00")| #
+               id == "AG330" & time >= as.Date("2009-12-02 00:00:00")| #
+               id == "AG332" & time >= as.Date("2009-11-21 00:00:00")| #
+               id == "AG349" & time >= as.Date("2009-12-02 00:00:00")| #
+               id == "AG350" & time >= as.Date("2009-12-02 00:00:00")| #
+               id == "AG351" & time >= as.Date("2009-12-09 00:00:00")| #
+               id == "AG352" & time >= as.Date("2009-12-09 00:00:00")| #
+               id == "AG353" & time >= as.Date("2010-01-17 00:00:00")| #
+               id == "AG356" & time >= as.Date("2013-02-10 00:00:00")| #
+               id == "AM222" & time >= as.Date("2007-03-02 00:00:00")| #
+               id == "AM226" & time >= as.Date("2007-03-02 00:00:00")| #
+               id == "AM227" & time >= as.Date("2007-03-02 00:00:00")| #
+               id == "AM233" & time >= as.Date("2006-04-24 00:00:00")| #
+               id == "AM235" & time >= as.Date("2007-03-15 00:00:00")| #
+               id == "AM240" & time >= as.Date("2007-03-15 00:00:00")| #
+               id == "AM264" & time >= as.Date("2009-01-29 00:00:00")| #
+               id == "AM272" & time >= as.Date("2007-12-19 00:00:00")| #
+               id == "AM295" & time >= as.Date("2007-11-27 00:00:00")| #
+               id == "AM86" & time >= as.Date("2005-12-04 00:00:00"))  #
 
 #' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr

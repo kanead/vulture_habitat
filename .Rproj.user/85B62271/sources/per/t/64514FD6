@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "0",
+    "hash" : "2799794830",
     "id" : "64514FD6",
-    "lastKnownWriteTime" : 1566914930,
-    "last_content_update" : 1566914930684,
+    "lastKnownWriteTime" : 1567087529,
+    "last_content_update" : 1567087529800,
     "path" : "~/Manuscripts/vulture_habitat/code/2. prep_swazi.R",
     "project_path" : "code/2. prep_swazi.R",
     "properties" : {
-        "cursorPosition" : "0,0",
-        "scrollLine" : "0"
+        "cursorPosition" : "96,37",
+        "scrollLine" : "72"
     },
     "relative_order" : 2,
     "source_on_save" : false,
