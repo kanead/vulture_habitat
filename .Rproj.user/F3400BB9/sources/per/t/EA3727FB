@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1567154220110.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1852432348",
+    "id" : "EA3727FB",
+    "lastKnownWriteTime" : 1567158353,
+    "last_content_update" : 1567158353305,
+    "path" : "~/Science/Manuscripts/vulture_habitat/code/HR_analysis_swazi.R",
+    "project_path" : "code/HR_analysis_swazi.R",
+    "properties" : {
+        "cursorPosition" : "145,30",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

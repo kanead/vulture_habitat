@@ -1,0 +1,517 @@
+#############################################################################
+# Manx Shearwater Tracking Study 
+# - note that some birds were tracked in 2 seasons 
+#############################################################################
+# packages 
+library(sp)
+library(rgdal)
+library(adehabitatLT)
+library(momentuHMM)
+library(dplyr)
+library(data.table)
+#############################################################################
+# load data
+#############################################################################
+rm(list=ls())
+# setwd("C:\\Users\\adamdkane\\Desktop\\Science\\Manx Shearwater")
+setwd("C:\\Users\\Adam\\Documents\\Science\\Manuscripts\\Manx Shearwater tracking study\\ManxTracks")
+mydata<-read.csv("manxHIGB_sub.csv",header = T,sep=",")
+head(mydata)
+#############################################################################
+# drop unused columns 
+#############################################################################
+drops <- c("Altitude","Speed","Course","Type","Distance","Essential","ID","Year","count")
+mydata<-mydata[ , !(names(mydata) %in% drops)]
+head(mydata)
+#############################################################################
+# combine date and time into one column and covert time to class POSIXct
+#############################################################################
+mydata$dateTime<-as.POSIXct(paste(mydata$Date, mydata$Time), format="%d/%m/%Y %H:%M:%S")
+#mydata$Time<-as.POSIXct(mydata$Time, format="%H:%M:%S")
+head(mydata)
+tail(mydata)
+#############################################################################
+# remove rows with no values for latitude or longitude 
+#############################################################################
+mydata<-mydata[complete.cases(mydata$Latitude),]
+mydata<-mydata[complete.cases(mydata$Longitude),]
+head(mydata)
+#coordinates(mydata) = ~Longitude+Latitude
+# plot(mydata$Longitude, mydata$Latitude)
+#############################################################################
+# count the number of relocations per bird 
+#############################################################################
+sapply(split(mydata$Latitude,mydata$Bird_ID),length)
+length(levels(mydata$Bird_ID))
+#############################################################################
+# Find max distance reached for each bird 
+#############################################################################
+#myfuncCosineIre<-function(x){max(distCosine(c(-10.2572,53.5464), cbind(x$Longitude, x$Latitude)))/1000}
+#sapply(split(mydata[5:4],mydata$Bird_ID), myfuncCosineIre)
+tapply(mydata$Bird_ID,mydata$Location,function(x)length(unique(x)))
+
+#############################################################################
+# Number of tracked birds per colony and per year
+#############################################################################
+tapply(mydata$Bird_ID,mydata$Location,function(x)length(unique(x)))
+
+
+HIdata <- subset(mydata,Location=="HI")
+head(HIdata)
+droplevels(HIdata$Location)
+HIdata <- droplevels(HIdata)
+
+
+GBdata <- subset(mydata,Location=="GB")
+head(GBdata)
+droplevels(GBdata$Location)
+GBdata <- droplevels(GBdata)
+
+#############################################################################
+# drop the birds that have fewer than 20 relocations 
+#############################################################################
+mydata <- mydata[!(as.numeric(mydata$Bird_ID) %in% which(table(mydata$Bird_ID)<20)),]
+mydata <- droplevels(mydata)
+length(levels(mydata$Bird_ID))
+head(mydata)
+#############################################################################
+# Find max distance reached for each bird which had greater than 20 relocations 
+#############################################################################
+#myfuncCosineIre<-function(x){max(distCosine(c(-10.2572,53.5464), cbind(x$Longitude, x$Latitude)))/1000}
+#sapply(split(mydata[5:4],mydata$Bird_ID), myfuncCosineIre)
+#maxDistManx <- sapply(split(mydata[5:4],mydata$Bird_ID), myfuncCosineIre)
+# write.table(maxDistManx,file="maxDistManx.csv")
+#############################################################################
+# measure the time difference between points for each bird ID using dplyr 
+# - Group your data by ID
+# - Compute time diffs between each timestamp in your group (the 1st time diff is NA)
+# - Create a new ID that counts no of prior time gaps that are large (e.g. > 20 mins)
+#############################################################################
+mydata<- mydata %>%
+  group_by(Bird_ID) %>%
+  mutate(timeDiff = c(NA, difftime(tail(dateTime, -1), head(dateTime, -1), units="min"))) %>%
+  mutate(newID = paste0(Bird_ID, cumsum(!is.na(timeDiff) & timeDiff > 20))) %>%
+  ungroup()
+
+mydata<-data.frame(mydata)
+mydata$newID<-as.factor(mydata$newID)
+
+head(mydata)
+length(levels(factor(mydata$newID)))
+
+# explore the time difference between locations 
+# by bird
+sampling <- mydata %>% group_by(Bird_ID) %>% summarize(median=median(timeDiff,na.rm = T))
+sum(sampling$median < 5) / length(sampling$Bird_ID)
+# and overall
+sum(mydata$timeDiff > 0 & mydata$timeDiff < 5, na.rm = T) / length(mydata$Date)
+#############################################################################
+# drop the new bird IDs that have fewer than 20 relocations 
+#############################################################################
+sapply(split(mydata$Latitude,mydata$newID),length)
+length(levels(mydata$newID))
+mydata <- mydata[!(as.numeric(mydata$newID) %in% which(table(mydata$newID)<20)),]
+mydata <- droplevels(mydata)
+length(levels(mydata$newID))
+head(mydata)
+
+#############################################################################
+# find locations within certain lat/lon distance in r, distance given in  
+# metres location of High Island. Drop those within a certain radius 
+#############################################################################
+mydataHI <- subset(mydata,Location=="HI")
+head(mydataHI)
+droplevels(mydataHI$Location)
+mydataHI <- droplevels(mydataHI)
+length(mydataHI$Date)
+levels(mydataHI$Location)
+mylat <- 53.5464
+mylon <- -10.2572
+lat<-mydataHI$Latitude
+lon<-mydataHI$Longitude
+list1 <- data.frame(lon,lat)
+list2<- data.frame(mylon,mylat)
+#
+library(geosphere)
+
+mat <- distm(list1[,c('lon','lat')], list2[,c('mylon','mylat')], fun=distVincentyEllipsoid)
+mydataHI$distance <- apply(mat, 1, min)/1000
+head(mydataHI)
+max(mydataHI$distance)
+
+plot(mydataHI$Longitude,mydataHI$Latitude)
+plot(mydataHI$Longitude[mydataHI$distance>5],mydataHI$Latitude[mydataHI$distance>5])
+plot(mydataHI$Longitude[mydataHI$distance<5],mydataHI$Latitude[mydataHI$distance<5])
+# how many data points are within 5km of High Island?
+length(mydataHI$Longitude[mydataHI$distance<5] & mydataHI$Latitude[mydataHI$distance<5])
+
+mydataHI <- mydataHI[mydataHI$distance >5, ]
+length(mydataHI$Date)
+
+
+#############################################################################
+# find locations within certain lat/lon distance in r, distance given in  
+# metres location of Great Blaskets. Drop those within a certain radius 
+#############################################################################
+mydataGB <- subset(mydata,Location=="GB")
+head(mydataGB)
+droplevels(mydataGB$Location)
+mydataGB <- droplevels(mydataGB)
+length(mydataGB$Date)
+levels(mydataGB$Location)
+mylat <- 52.0895
+mylon <- -10.536
+lat<-mydataGB$Latitude
+lon<-mydataGB$Longitude
+list1 <- data.frame(lon,lat)
+list2<- data.frame(mylon,mylat)
+#
+library(geosphere)
+
+mat <- distm(list1[,c('lon','lat')], list2[,c('mylon','mylat')], fun=distVincentyEllipsoid)
+mydataGB$distance <- apply(mat, 1, min)/1000
+head(mydataGB)
+max(mydataGB$distance)
+
+plot(mydataGB$Longitude,mydataGB$Latitude)
+plot(mydataGB$Longitude[mydataGB$distance>5],mydataGB$Latitude[mydataGB$distance>5])
+plot(mydataGB$Longitude[mydataGB$distance<5],mydataGB$Latitude[mydataGB$distance<5])
+
+# how many data points are within 5km of Great Blasket?
+length(mydataGB$Longitude[mydataGB$distance<5] & mydataGB$Latitude[mydataGB$distance<5])
+
+mydataGB <- mydataGB[mydataGB$distance >5, ]
+length(mydataGB$Date)
+
+#############################################################################
+# Bind the two areas back together GB + HI
+#############################################################################
+mydata<-rbind(mydataHI,mydataGB)
+head(mydata)
+tail(mydata)
+#############################################################################
+# again drop the new bird IDs that have fewer than 20 relocations 
+#############################################################################
+sapply(split(mydata$Latitude,mydata$newID),length)
+length(levels(mydata$newID))
+mydata <- mydata[!(as.numeric(mydata$newID) %in% which(table(mydata$newID)<20)),]
+mydata <- droplevels(mydata)
+length(levels(mydata$newID))
+head(mydata)
+
+#############################################################################
+# Split the track again so we can analyse colony separately 
+#############################################################################
+# First for Great Blaskets 
+#############################################################################
+mydataGB <- subset(mydata,Location=="GB")
+
+#############################################################################
+# create a trajectory object using adehabitatLT
+#############################################################################
+mydataGB <- droplevels(mydataGB)
+tr<-as.ltraj(data.frame(X=mydataGB$Longitude,Y=mydataGB$Latitude),date=mydataGB$dateTime,id=mydataGB$newID,typeII=T) #create trajectory
+tstep<-300 #time step we want for the interpolation, in seconds, 300 secs = 5 mins 
+newtr<-redisltraj(tr, u=tstep, type = "time")
+
+#############################################################################
+# Prep for HMM
+#############################################################################
+mydataGB<-ld(newtr)
+names(mydataGB)[names(mydataGB) == 'x'] <- 'lon'
+names(mydataGB)[names(mydataGB) == 'y'] <- 'lat'
+head(mydataGB)
+tail(mydataGB)
+# prep data for upload to movebank 
+mydataGBMovebank<-mydataGB[,c("id","lon","lat","date")]
+plot(mydataGBMovebank$lon,mydataGBMovebank$lat)
+# write.csv(mydataGBMovebank,file="mydataMovebankBuffer_GB.csv")
+
+#############################################################################
+# Split the track again so we can analyse colony separately 
+#############################################################################
+# Now for High Island 
+#############################################################################
+mydataHI <- subset(mydata,Location=="HI")
+
+#############################################################################
+# create a trajectory object using adehabitatLT
+#############################################################################
+mydataHI <- droplevels(mydataHI)
+tr<-as.ltraj(data.frame(X=mydataHI$Longitude,Y=mydataHI$Latitude),date=mydataHI$dateTime,id=mydataHI$newID,typeII=T) #create trajectory
+tstep<-300 #time step we want for the interpolation, in seconds, 300 secs = 5 mins 
+newtr<-redisltraj(tr, u=tstep, type = "time")
+
+#############################################################################
+# Prep for HMM
+#############################################################################
+mydataHI<-ld(newtr)
+names(mydataHI)[names(mydataHI) == 'x'] <- 'lon'
+names(mydataHI)[names(mydataHI) == 'y'] <- 'lat'
+head(mydataHI)
+tail(mydataHI)
+# prep data for upload to movebank 
+mydataHIMovebank<-mydataHI[,c("id","lon","lat","date")]
+plot(mydataHIMovebank$lon,mydataHIMovebank$lat)
+
+# write.csv(mydataHIMovebank,file="mydataMovebankBuffer_HI.csv")
+
+#############################################################################
+# Load in data with Movebank covariates 
+#############################################################################
+setwd("C:\\Users\\Adam\\Documents\\Science\\Manuscripts\\Manx Shearwater tracking study\\ManxTracks\\manxMovebank")
+mydata<-read.csv("ManxHI-5088915778049410941.csv",header = T,sep = ",")
+# mydata<-read.csv("ManxGB-5604353868170472689.csv",header = T,sep = ",")
+
+head(mydata)
+mydata<-mydata[,c("location.long","location.lat","tag.local.identifier","MODIS.Ocean.Aqua.OceanColor.4km.Monthly.Chlorophyll.A..OCI.","timestamp")]
+
+head(mydata)
+names(mydata)[names(mydata) == 'location.long'] <- 'long'
+names(mydata)[names(mydata) == 'location.lat'] <- 'lat'
+names(mydata)[names(mydata) == 'tag.local.identifier'] <- 'ID'
+names(mydata)[names(mydata) == 'MODIS.Ocean.Aqua.OceanColor.4km.Monthly.Chlorophyll.A..OCI.'] <- 'chloroMonth'
+mydata$timestamp<-as.POSIXct(mydata$timestamp, format="%Y-%m-%d %H:%M:%S")
+head(mydata)
+#############################################################################
+# drop the levels that don't have chlorophyll data, no need to do this for bathymetry
+#############################################################################
+length(mydata$ID)
+# remove NAs chlorophyll values
+mydata <- mydata %>%
+  dplyr:: mutate(chloroMonth = ifelse(is.na(chloroMonth),0,chloroMonth))
+
+mydata<-group_by(mydata, ID) %>%
+  dplyr::mutate(first2 = min(which(chloroMonth == 0 | row_number() == n()))) %>%
+  filter(row_number() <= first2) %>%
+  dplyr::select(-first2)
+length(mydata$ID)
+mydata<-droplevels(mydata)
+mydata<-mydata[mydata$chloroMonth!=0 , ]
+mydata<-data.frame(mydata)
+length(mydata$ID)
+sapply(split(mydata$chloroMonth,mydata$ID),length)
+mydata<-droplevels(mydata)
+sapply(split(mydata$chloroMonth,mydata$ID),length)
+mydata <- mydata[!(as.numeric(mydata$ID) %in% which(table(mydata$ID)<20)),]
+mydata <- droplevels(mydata)
+length(levels(mydata$ID))
+head(mydata)
+length(mydata$ID)
+# export this data where the levels with NA chloro have been dropped 
+# write.csv(mydata,file="mydataMovebankBufferNAs_HI.csv")
+#############################################################################
+# drop the rows that have distances within the 5km buffer  
+#############################################################################
+mydata
+mylat <- 53.5464
+mylon <- -10.2572
+lat<-mydata$lat
+lon<-mydata$long
+list1 <- data.frame(lon,lat)
+list2<- data.frame(mylon,mylat)
+mat <- distm(list1[,c('lon','lat')], list2[,c('mylon','mylat')], fun=distVincentyEllipsoid)
+
+mydata$distance <- apply(mat, 1, min)/1000
+max(mydata$distance)
+tail(min(mydata$distance))
+
+# how many data points are within 5km of High Island?
+length(mydata$long[mydata$distance<5] & mydata$lat[mydata$distance<5])
+
+mydata <- mydata[mydata$distance >5, ]
+
+# should now be 0
+length(mydata$long[mydata$distance<5] & mydata$lat[mydata$distance<5])
+
+mydata <- select(mydata, long,lat,ID,chloroMonth,timestamp)
+head(mydata)
+length(mydata$long)
+write.csv(mydata,file="mydataMovebankBuffer_HI_Enrico.csv")
+#############################################################################
+# drop the factor levels that have extreme chlorophyll values 
+#############################################################################
+# length(mydata$ID)
+# remove NAs chlorophyll values
+#hist(mydata$chloroMonth)
+#mydata <- mydata %>%
+#  dplyr:: mutate(chloroMonth = ifelse(chloroMonth>10,0,chloroMonth))
+#hist(mydata$chloroMonth)
+#mydata<-group_by(mydata, ID) %>%
+#  dplyr::mutate(first2 = min(which(chloroMonth == 0 | row_number() == n()))) %>%
+#  filter(row_number() <= first2) %>%
+#  dplyr::select(-first2)
+#length(mydata$ID)
+#mydata<-droplevels(mydata)
+#mydata<-mydata[mydata$chloroMonth!=0 , ]
+#mydata<-data.frame(mydata)
+#length(mydata$ID)
+#sapply(split(mydata$chloroMonth,mydata$ID),length)
+#mydata<-droplevels(mydata)
+#sapply(split(mydata$chloroMonth,mydata$ID),length)
+#mydata <- mydata[!(as.numeric(mydata$ID) %in% which(table(mydata$ID)<20)),]
+#mydata <- droplevels(mydata)
+#length(levels(mydata$ID))
+#head(mydata)
+#length(mydata$ID)
+#hist(mydata$chloroMonth)
+#sum(mydata$chloroMonth<0)
+
+#############################################################################
+# project to UTM coordinates using package rgdal
+#############################################################################
+llcoord <- SpatialPoints(mydata[,1:2],
+                         proj4string=CRS("+proj=longlat +datum=WGS84"))
+utmcoord <- spTransform(llcoord,CRS("+proj=utm +zone=29 ellps=WGS84")) # 29 = IRE or 30 = UK
+# add UTM locations to data frame
+mydata$x <- attr(utmcoord,"coords")[,1]
+mydata$y <- attr(utmcoord,"coords")[,2]
+
+#############################################################################
+# Add a column with reshuffled monthly chlorophyll as a null measure 
+#############################################################################
+#mydata$nullChloro <- sample(mydata$chloroMonth)
+#head(mydata)
+#cor.test(mydata$chloroMonth,mydata$nullChloro)
+#############################################################################
+# Prepare the data to be analysed using the HMM
+#############################################################################
+# mydata<-mydata[,c("id","x","y")]
+# names(mydata)[names(mydata) == 'id'] <- 'ID'
+head(mydata)
+
+plot(mydata$x , mydata$y)
+mydata<-mydata[,c("ID","x","y","chloroMonth")]
+# mydata<-mydata[,c("ID","x","y","chloroMonth","nullChloro")]
+mydata <- momentuHMM::prepData(mydata)
+
+# Fit interaction between distance and chloro
+# distance can be binary > 80 = offshore, < 80 = coastal
+#############################################################################
+# fit HMM
+# - 2 state model 
+#############################################################################
+stateNames <- c("transiting", "foraging")
+# distributions for observation processes
+dist = list(step = "gamma", angle = "vm")
+# initial parameters
+Par0_m1 <- list(step=c(2000,1000,100,500,0.1,0.1),angle=c(40,20))
+# fit model
+m1 <- momentuHMM::fitHMM(data = mydata, nbStates = 2, dist = dist, Par0 = Par0_m1,
+                         estAngleMean = list(angle=FALSE), stateNames = stateNames, retryFits = 1)
+m1
+
+#############################################################################
+# fit HMM
+# - 3 state model 
+#############################################################################
+stateNames <- c("transiting", "foraging", "resting")
+# distributions for observation processes
+dist = list(step = "gamma", angle = "vm")
+# initial parameters
+Par0_m2 <- list(step=c(2000,1000,100,100,500,50,0.1,0.1,0.1),angle=c(40,20,1))
+# fit model
+m2 <- momentuHMM::fitHMM(data = mydata, nbStates = 3, dist = dist, Par0 = Par0_m2,
+                         estAngleMean = list(angle=FALSE), stateNames = stateNames, retryFits = 1)
+m2
+#############################################################################
+# fit HMM
+# - 3 state model with bathymetry covariate 
+#############################################################################
+formula <- ~ bath # Mark, you can recode this as formula <- ~ bath * chlorophyll for an interaction
+stateNames <- c("transiting", "foraging", "resting")
+# distributions for observation processes
+dist = list(step = "gamma", angle = "vm")
+# initial parameters
+Par0_m3 <- list(step=c(2000,1000,100,100,500,50,0.1,0.1,0.1),angle=c(40,20,1), formula=formula)
+m3 <- momentuHMM::fitHMM(data = mydata, nbStates = 3, dist = dist, Par0 = Par0_m3,
+                         estAngleMean = list(angle=FALSE), stateNames = stateNames, formula = formula, retryFits = 5)
+m3
+
+#############################################################################
+# fit HMM
+# - 3 state model with monthly chlorophyll covariate
+#############################################################################
+formula <- ~ chloroMonth 
+stateNames <- c("transiting", "foraging", "resting")
+# distributions for observation processes
+dist = list(step = "gamma", angle = "vm")
+# initial parameters
+Par0_m4 <- list(step=c(2000,1000,100,100,500,50,0.1,0.1,0.1),angle=c(40,20,1), formula=formula)
+m4 <- momentuHMM::fitHMM(data = mydata, nbStates = 3, dist = dist, Par0 = Par0_m4,
+                         estAngleMean = list(angle=FALSE), stateNames = stateNames, formula = formula, retryFits = 1)
+m4
+
+#############################################################################
+# fit HMM
+# - 3 state model with monthly chlorophyll covariate randomised as a null
+#############################################################################
+formula <- ~ nullChloro 
+stateNames <- c("transiting", "foraging", "resting")
+# distributions for observation processes
+dist = list(step = "gamma", angle = "vm")
+# initial parameters
+Par0_m5 <- list(step=c(2000,1000,100,100,500,50,0.1,0.1,0.1),angle=c(40,20,1), formula=formula)
+m5 <- momentuHMM::fitHMM(data = mydata, nbStates = 3, dist = dist, Par0 = Par0_m5,
+                         estAngleMean = list(angle=FALSE), stateNames = stateNames, formula = formula, retryFits = 1)
+m5
+
+# save model objects
+saveRDS(m4, "3StateHMMSubset+Chloro_Buffer_HI_exclusion.rds") 
+saveRDS(m2, "3StateHMMSubset-Chloro_Buffer_HI_exclusion.rds") 
+#############################################################################
+# read in saved models 
+#############################################################################
+setwd("C:\\Users\\Adam\\Desktop\\manxshearwaterhmms")
+dir()
+HMMData1<-readRDS("3StateHMMSubset+Chloro_Buffer_GB.rds")  # GB with chloro
+HMMData2<-readRDS("3StateHMMSubset-Chloro_Buffer_GB.rds") # GB without chloro 
+HMMData3<-readRDS("3StateHMMSubset+Chloro_Buffer_HI.rds") # HI with chloro
+HMMData4<-readRDS("3StateHMMSubset-Chloro_Buffer_HI.rds") # HI without chloro 
+
+AIC(HMMData1,HMMData2) # GB
+AIC(HMMData3,HMMData4) # HI
+
+str(HMMData1$data)
+str(HMMData2$data)
+str(HMMData3$data)
+str(HMMData4$data)
+
+plot(HMMData1)
+plot(HMMData2)
+plot(HMMData3)
+plot(HMMData4)
+
+# extract states for GB
+statesGB <- viterbi(HMMData1)
+HMMData1$data$state <- statesGB
+write.csv(HMMData1$data, file = "GB.csv", row.names = F)
+
+GB.data <- read.csv("GB.csv",header = T,sep = ",")
+head(GB.data)
+plot(GB.data$x[GB.data$ID=="EY95003_0280"],GB.data$y[GB.data$ID=="EY95003_0280"],col=GB.data$state)
+
+
+# extract states for HI
+statesHI <- viterbi(HMMData3)
+HMMData3$data$state <- statesHI
+write.csv(HMMData3$data, file = "HI.csv", row.names = F)
+
+HI.data <- read.csv("HI.csv",header = T,sep = ",")
+head(HI.data)
+plot(HI.data$x[HI.data$ID=="EB42450_0921"],HI.data$y[HI.data$ID=="EB42450_0921"],col=HI.data$state)
+
+#' check the models where I removed the values near the colony again 
+setwd("C:\\Users\\Adam\\Documents\\Science\\Manuscripts\\Manx Shearwater tracking study\\ManxTracks\\manxMovebank")
+HMMData1<-readRDS("3StateHMMSubset+Chloro_Buffer_HI_exclusion.rds") # HI with chloro
+HMMData2<-readRDS("3StateHMMSubset-Chloro_Buffer_HI_exclusion.rds") # HI without chloro 
+AIC(HMMData1,HMMData2)
+
+plot(HMMData1)
+plot(HMMData2)
+str(HMMData1)
+viterbi(HMMData1)
+
+library(tidyverse)
+
+length(HMMData1$data$ID)

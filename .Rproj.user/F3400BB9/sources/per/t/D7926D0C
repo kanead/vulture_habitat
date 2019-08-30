@@ -13,9 +13,9 @@
     "project_path" : "code/2. prep_swazi.R",
     "properties" : {
         "cursorPosition" : "254,0",
-        "scrollLine" : "243"
+        "scrollLine" : "0"
     },
-    "relative_order" : 4,
+    "relative_order" : 3,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

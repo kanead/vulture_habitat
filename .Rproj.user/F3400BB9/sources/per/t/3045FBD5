@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1567154240353.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2540518772",
+    "id" : "3045FBD5",
+    "lastKnownWriteTime" : 1567158566,
+    "last_content_update" : 1567158566806,
+    "path" : "~/Science/Manuscripts/vulture_habitat/code/HR_analysis_morgan_pfeiffer.R",
+    "project_path" : "code/HR_analysis_morgan_pfeiffer.R",
+    "properties" : {
+        "cursorPosition" : "221,0",
+        "scrollLine" : "183",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

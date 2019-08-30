@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1567154484702.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1785537647",
+    "id" : "D3EA07FC",
+    "lastKnownWriteTime" : 1567154118,
+    "last_content_update" : 1567154118,
+    "path" : "~/Science/Manuscripts/vulture_habitat/code/2. prep_morgan_pfeiffer.R",
+    "project_path" : "code/2. prep_morgan_pfeiffer.R",
+    "properties" : {
+        "cursorPosition" : "177,0",
+        "scrollLine" : "173"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

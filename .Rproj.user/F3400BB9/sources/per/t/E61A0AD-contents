@@ -1,0 +1,66 @@
+list.of.packages <- c("sp", "tidyverse", "ggmap", "geosphere")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+library(sp)
+library(tidyverse)
+library(ggmap)
+library(geosphere)
+
+# load data provided from the online repository
+fulmarURL <- "https://datadryad.org/bitstream/handle/10255/dryad.174482/"
+fileName <- "Fulmar_trackingData.csv?sequence=1"
+mydata <- read.csv(url(paste0(fulmarURL,fileName)),
+                     stringsAsFactors = FALSE)
+
+head(mydata)
+
+#' pick the relevant columns using the select function
+mydata <- mydata %>% select(birdID, tripID, Longitude, Latitude, Date)
+
+#' make the birdID and tripID columns factors because they identify the individual birds and their trips
+
+mydata$birdID <- as.factor(mydata$birdID)
+mydata$tripID <- as.factor(mydata$tripID)
+
+#' Only one bird went on more than one trip
+#' let's remove its second trip so we're comparing 
+#' like with like across all of the birds
+mydata  <- mydata %>% filter(!tripID == "1") %>%   droplevels()
+
+#' check out the remaining levels for tripID
+#' number 1 should be gone
+levels(mydata$tripID)
+
+#' plot the data with no background
+ggplot(data = mydata, mapping = aes(x = Longitude, y = Latitude, color = birdID)) + geom_point()
+
+#' plot the tracks by birdID
+qmplot(Longitude,
+       Latitude,
+       data = mydata,
+       maptype = "toner-lite",
+       colour = birdID)
+
+#' Now plot each bird on its own map
+#' plot each track on a separate panel using facet
+(
+  qmplot(
+    Longitude,
+    Latitude,
+    data = mydata,
+    maptype = "toner-background",
+    colour = birdID
+  ) +
+    facet_wrap( ~ birdID)
+)
+
+#' What was the maximum distance each bird travelled from its colony. We know the colony at Eynhallow is located at longitude -3.119722 and latitude 59.144722
+
+#' this is a custom function which takes the colony coordinates and the data from our tracks
+#' It uses these data to calculate the maximum distance from the colony using distCosine, a function from the package geosphere
+distance_function<-function(x){max(distCosine(c(-3.119722,59.144722), cbind(x$Longitude, x$Latitude)))/1000}
+
+#' we extract the columns that correspond to longitude and latitude and apply our function to each birdID separately
+sapply(split(mydata[3:4],mydata$birdID), distance_function)
+

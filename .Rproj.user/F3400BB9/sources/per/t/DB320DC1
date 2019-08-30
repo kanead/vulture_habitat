@@ -5,17 +5,17 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1501706853",
+    "hash" : "1168538400",
     "id" : "DB320DC1",
-    "lastKnownWriteTime" : 1564736107,
-    "last_content_update" : 1564736107,
+    "lastKnownWriteTime" : 1567154118,
+    "last_content_update" : 1567154118,
     "path" : "~/Science/Manuscripts/vulture_habitat/code/2. prep_ck_tanz.R",
     "project_path" : "code/2. prep_ck_tanz.R",
     "properties" : {
-        "cursorPosition" : "295,19",
-        "scrollLine" : "282"
+        "cursorPosition" : "53,64",
+        "scrollLine" : "0"
     },
-    "relative_order" : 3,
+    "relative_order" : 2,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"
