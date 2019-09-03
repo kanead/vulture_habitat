@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1567510232899.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2737385717",
+    "id" : "94FF074B",
+    "lastKnownWriteTime" : 1567511608,
+    "last_content_update" : 1567511608585,
+    "path" : "~/Manuscripts/vulture_habitat/code/brownian_bridge_example.R",
+    "project_path" : "code/brownian_bridge_example.R",
+    "properties" : {
+        "cursorPosition" : "16,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 20,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
