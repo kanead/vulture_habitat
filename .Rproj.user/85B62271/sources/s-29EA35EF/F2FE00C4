@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568733573586.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F2FE00C4",
+    "lastKnownWriteTime" : 1568813391,
+    "last_content_update" : 1568813391945,
+    "path" : "~/Manuscripts/vulture_habitat/code/Dynamic Brownian Bridge Models_Swazi.R",
+    "project_path" : "code/Dynamic Brownian Bridge Models_Swazi.R",
+    "properties" : {
+        "cursorPosition" : "8,10",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
