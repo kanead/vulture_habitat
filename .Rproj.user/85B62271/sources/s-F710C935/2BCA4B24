@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569252398430.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2BCA4B24",
+    "lastKnownWriteTime" : 1569255271,
+    "last_content_update" : 1569255271388,
+    "path" : "~/Manuscripts/vulture_habitat/code/1_map_data.R",
+    "project_path" : "code/1_map_data.R",
+    "properties" : {
+        "cursorPosition" : "55,0",
+        "scrollLine" : "9",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -113,7 +113,7 @@ data_summary
 #' turn back to lat long
 trk_map <-
   mk_track(
-    ga_nam,
+    ralph_data,
     .x = long,
     .y = lat,
     .t = time,
