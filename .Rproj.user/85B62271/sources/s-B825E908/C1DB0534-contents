@@ -1,13 +1,13 @@
 #' Dynamic Brownian Bridge Models Using move Package
 #' load the move package
-require(move)
-
+library(move)
+library(ggmap)
 
 #' transform the CRS
 #' try the amt package
 trk <-
   mk_track(
-    ck_tanz_data,
+    mend_data,
     .x = long,
     .y = lat,
     .t = time,
@@ -25,6 +25,8 @@ trk <-
 
 track <- data.frame(trk)
 track <- arrange(track, id)
+#' select one individual because the vector size is too big
+track <- filter(track, id == "WBV1__44782")
 #' create a move object 
 loc <-
   move(
@@ -46,8 +48,43 @@ dbbmm <-
     raster = 100
   )
 
-writeRaster(dbbmm, filename='brownian_bridges/ck_tanz_dbbm.tif', overwrite=TRUE)
+writeRaster(dbbmm, filename='brownian_bridges/mend_data_WBV1__44782.tif', overwrite=TRUE)
 
 plot(dbbmm)
 contour(dbbmm, add=T, levels=c(.5,.95))
 raster2contour(dbbmm)
+show(dbbmm)
+
+bbmm.contour = data.frame(x = dbbmm$x, y = dbbmm$y, probability = dbbmm$probability)
+
+
+#' compare dbmm plot to tracks
+#' We can map the data
+#' turn back to lat long
+trk_map <-
+  mk_track(
+    mend_data,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  )
+
+trk_map <- filter(trk_map, id == "WBV1__44782")
+
+#' plot all of the data on the one graph
+qmplot(x_,
+       y_,
+       data = trk_map,
+       maptype = "toner-lite",
+       colour = id, 
+       legend = "none",
+       xlab = "longitude", 
+       ylab = "latitude")
+
+
+bb.95 <- getverticeshr(tata, percent = 95)
+bb.95
+
