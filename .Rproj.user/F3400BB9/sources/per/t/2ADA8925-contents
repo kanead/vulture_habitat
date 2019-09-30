@@ -20,8 +20,9 @@ mydata <- files %>%
   reduce(rbind)
 
 #' filter the data to remove obvious outliers
-mydata <- filter(mydata, lat < 20 & lat > -40 & long > 10)
+mydata <- filter(mydata, lat < 20 & lat > -40 & long > 10 & long < 60)
 head(mydata)
 tail(mydata)
 str(mydata)
 levels(as.factor(mydata$study))
+
