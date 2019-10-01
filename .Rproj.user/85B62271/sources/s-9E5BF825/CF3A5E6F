@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569938605810.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "CF3A5E6F",
+    "lastKnownWriteTime" : 1569939390,
+    "last_content_update" : 1569939390322,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_Campbell.R",
+    "project_path" : "code/2. prep_Campbell.R",
+    "properties" : {
+        "cursorPosition" : "63,0",
+        "scrollLine" : "40",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

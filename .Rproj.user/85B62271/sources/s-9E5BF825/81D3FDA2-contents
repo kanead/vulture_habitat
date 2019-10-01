@@ -20,6 +20,7 @@ res_data
 #' CK = east
 #' masai = east
 #' north = east
+#' Corinne_mara = east
 #' GA_Namibia = south
 #' inter = south
 #' Kerri = south
@@ -28,12 +29,17 @@ res_data
 #' Swazi = south
 #' andre = south
 #' ralph = south
+#' glynn = south
+#' orr = south 
+#' galligan = south 
+#' Schabo = south 
 
 res_data$region <-
   if_else(
     res_data$study == "CK" |
       res_data$study == "masai" |
-      res_data$study == "north",
+      res_data$study == "north" |
+      res_data$study == "Corinne_mara" ,
     "east",
     "south"
   )
@@ -49,6 +55,10 @@ write.csv(res_data, file = "results/summary_all_tracks.csv", row.names = FALSE)
 nonWantedLevels <- c("AG382", "AM89", "AM88", "AM87")
 subset <- res_data %>% dplyr::filter(!id %in% nonWantedLevels)
 levels(as.factor(subset$id))
+length(levels(as.factor(subset$id)))
+length(levels(as.factor(subset$study)))
+
+#' 188 birds from 16 studies 
 
 #' how long were the birds tracked for?
 p0 <-
@@ -59,26 +69,35 @@ p0 <-
            fill = factor(species)
          )) + geom_boxplot(alpha = 0.5, show.legend = FALSE) + ylab("duration (days)") +
   theme_bw()
-p0 + theme(legend.position = "none")
+duration_data_all <- p0 + theme(legend.position = "none")
+duration_data_all
+ggsave("plots/duration_data_all.png")
 
 #' extract just the gyps for all durations
 species_to_keep <- c("cv", "rv", "wb")
 gyps <- subset %>% dplyr::filter(species %in% species_to_keep)
 #' how long were the gyps tracked for
-ggplot(data = gyps,
-       mapping = aes(
-         x = species,
-         y = duration,
-         fill = factor(species)
-       )) + geom_boxplot(alpha = 0.5, show.legend = FALSE) + ylab("duration (days)") +
+duration_data_gyps <- ggplot(data = gyps,
+                             mapping = aes(
+                               x = species,
+                               y = duration,
+                               fill = factor(species)
+                             )) + geom_boxplot(alpha = 0.5, show.legend = FALSE) + ylab("duration (days)") +
   theme_bw() + theme(
     legend.position = "none",
     axis.text = element_text(size = 20),
     axis.title = element_text(size = 20)
   )
-
+duration_data_gyps
+ggsave("plots/duration_data_gyps.png")
+#' how many data points?
+sum(gyps$n)
+#' get the mean duration
+gyps %>% summarize(mean_duration = mean(duration))
+#' group by species and 
+gyps %>% group_by(species) %>% summarize(mean_duration = mean(duration))
 #' keep only the birds that were tracked for over a year
-year <- dplyr::filter(subset, duration > 365)
+year <- dplyr::filter(subset, duration > 365) 
 #' boxplots of the KDEs by speices
 ggplot(data = year, mapping = aes(x = species, y = kde)) + geom_boxplot() + ylab("KDE 95%")
 #' boxplots of the KDEs by region
@@ -96,7 +115,8 @@ year %>% group_by(region) %>% summarize(median_kde = median(kde))
 
 
 #' subset to Gyps that were tracked for over a year
-gyps_year <- year %>% dplyr::filter(species == c("cv", "rv", "wb"))
+gyps_year <- year %>% dplyr::filter(species %in% species_to_keep)
+length(gyps_year$id)
 p1 <-
   ggplot(data = gyps_year,
          mapping = aes(
@@ -110,12 +130,13 @@ p1
 ylim1 = boxplot.stats(gyps_year$kde)$stats[c(1, 5)]
 
 # scale y limits based on ylim1
-p2 = p1 + coord_cartesian(ylim = ylim1 * 1.05) + theme(
+kde_gyps_year = p1 + coord_cartesian(ylim = ylim1 * 1.05) + theme(
   legend.position = "none",
   axis.text = element_text(size = 20),
   axis.title = element_text(size = 20)
 )
-p2
+kde_gyps_year
+ggsave("plots/kde_gyps_year.png")
 
 #' plot white backs by region
 wb <- year %>% dplyr::filter(species == c("wb"))
@@ -132,9 +153,13 @@ p3
 ylim1 = boxplot.stats(wb$kde)$stats[c(1, 5)]
 
 # scale y limits based on ylim1
-p4 = p3 + coord_cartesian(ylim = ylim1 * 1.05) + theme(
+wb_region = p3 + coord_cartesian(ylim = ylim1 * 1.05) + theme(
   legend.position = "none",
   axis.text = element_text(size = 20),
   axis.title = element_text(size = 20)
 )
-p4
+wb_region
+ggsave("plots/wb_region.png")
+
+#' group by region and get the median kde for the white backs
+wb %>% group_by(region) %>% summarize(median_kde = median(kde))

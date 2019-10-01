@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569941336657.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "4E267110",
+    "lastKnownWriteTime" : 1567087529,
+    "last_content_update" : 1567087529,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_swazi.R",
+    "project_path" : "code/2. prep_swazi.R",
+    "properties" : {
+        "cursorPosition" : "51,60",
+        "scrollLine" : "16"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

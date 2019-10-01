@@ -1,68 +1,83 @@
-# Orr's Vulture Tracking Dataset
+# Campbell's Vulture Tracking Dataset
 
 library(lubridate)
 library(SDLfilter)
 library(amt)
 library(sp)
 library(janitor)
-# orr
+# Campbell
 
-# select orr data which is Orr's data from everything
-orr_data <- filter(mydata, study == "orr")
-orr_data
+# select Campbell data which is Campbell's data from everything
+Campbell_data <- filter(mydata, study == "Campbell")
+Campbell_data
 
 #' Check for duplicated observations (ones with same lat, long, time,
 #'  and individual identifier).
-ind2 <- orr_data %>% select(long, lat, id) %>%
+ind2 <- Campbell_data %>% select(long, lat, id) %>%
   duplicated
 sum(ind2)
 # remove them
-orr_data$dups <- ind2
-orr_data <- filter(orr_data, dups == "FALSE")
-orr_data
-tail(orr_data)
+Campbell_data$dups <- ind2
+Campbell_data <- filter(Campbell_data, dups == "FALSE")
+Campbell_data
+tail(Campbell_data)
 # set the time column
-levels(factor(orr_data$id))
+levels(factor(Campbell_data$id))
 # can look at an individual level with
-(filter(orr_data, id == "15"))
+(filter(Campbell_data, id == "101411"))
 
 #' all of the data is in the format of day-month-year
 #' time zone is UTC by default
-orr_data$New_time <-
-  parse_date_time(x = orr_data$time, c("%Y/%m/%d %H:%M:%S")) 
+Campbell_data$New_time <-
+  parse_date_time(x = Campbell_data$time, c("%d/%m/%Y %H:%M")) 
 
 # keep only the new time data
-orr_data <-
-  select(orr_data, New_time, long, lat, id, species, study)
-orr_data <- rename(orr_data, time = New_time)
-orr_data
+Campbell_data <-
+  select(Campbell_data, New_time, long, lat, id, species, study)
+Campbell_data <- rename(Campbell_data, time = New_time)
+Campbell_data
 
 #' filter extreme data based on a speed threshold
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
-names(orr_data)[names(orr_data) == 'time'] <- 'DateTime'
+names(Campbell_data)[names(Campbell_data) == 'time'] <- 'DateTime'
 SDLfilterData <-
-  ddfilter.speed(data.frame(orr_data), vmax = 70, method = 1)
+  ddfilter.speed(data.frame(Campbell_data), vmax = 70, method = 1)
 length(SDLfilterData$DateTime)
 
 #' rename everything as before
-orr_data <- SDLfilterData
-names(orr_data)[names(orr_data) == 'DateTime'] <- 'time'
+Campbell_data <- SDLfilterData
+names(Campbell_data)[names(Campbell_data) == 'DateTime'] <- 'time'
 
 # check the minimum time and the maximum time
-min_time <- orr_data %>% group_by(id) %>% slice(which.min(time))
+min_time <- Campbell_data %>% group_by(id) %>% slice(which.min(time))
 data.frame(min_time)
 
-max_time <- orr_data %>% group_by(id) %>% slice(which.max(time))
+max_time <- Campbell_data %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
 
 #' determine the length of time each bird was tracked for
 duration <-difftime(max_time$time, min_time$time, units = "days"); duration
 
+#' a couple of Campbell's data points have NAs for timestamps 
+#' find them
+Campbell_data %>%
+       rowid_to_column() %>%
+       filter(is.na(time))
+
+#' remove them
+Campbell_data <- Campbell_data %>%
+  slice(c(-10136,-10137))
+
+#' check they're gone 
+Campbell_data %>%
+  rowid_to_column() %>%
+  filter(is.na(time))
+
 # try the amt package
 trk <-
   mk_track(
-    orr_data,
+    Campbell_data,
     .x = long,
     .y = lat,
     .t = time,
@@ -106,8 +121,8 @@ data_summary$max_time <- max_time$time
 data_summary$kde <- kde_95$kdearea
 data_summary$mcps <- mcp_95$area
 data_summary$species <- min_time$species
-data_summary$study <- "orr"
+data_summary$study <- "Campbell"
 data_summary
 
 #' can export this data summary 
-#' write.csv(data_summary, file="track_resolution_summary/orr_data_summary.csv", row.names = FALSE)
+#' write.csv(data_summary, file="track_resolution_summary/Campbell_data_summary.csv", row.names = FALSE)
