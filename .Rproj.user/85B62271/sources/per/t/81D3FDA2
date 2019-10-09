@@ -12,11 +12,11 @@
     "path" : "~/Manuscripts/vulture_habitat/code/4. summary_stats.R",
     "project_path" : "code/4. summary_stats.R",
     "properties" : {
-        "cursorPosition" : "77,56",
-        "scrollLine" : "0",
+        "cursorPosition" : "161,29",
+        "scrollLine" : "119",
         "tempName" : "Untitled1"
     },
-    "relative_order" : 3,
+    "relative_order" : 4,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

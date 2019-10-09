@@ -1,0 +1,68 @@
+#' clean the Corinne Masai Mara data and Extract a file for each bird
+
+rm(list=ls())
+
+setwd("C:\\Users\\Adam Kane\\Documents\\Manuscripts\\VultureMovementData\\VultureMovementData\\Corinne Masai Mara")
+library(tidyverse)
+library(readxl)
+
+# read the data
+mydata<- read_excel("Vultures Kendall Masai Mara Kenya.xlsx", col_names = TRUE)
+head(mydata)
+tail(mydata)
+
+#' filter the GPS data
+mydata <- mydata %>% filter(mydata[,10] == "gps")
+names(mydata)
+#' rename columns
+names(mydata)[names(mydata) == 'location-long'] <- 'long'
+names(mydata)[names(mydata) == 'location-lat'] <- 'lat'
+names(mydata)[names(mydata) == 'individual-local-identifier'] <- 'id'
+names(mydata)[names(mydata) == 'timestamp'] <- 'time'
+names(mydata)[names(mydata) == 'individual-taxon-canonical-name'] <- 'species'
+
+#' select only those columns 
+mydata <- select(mydata,time,long,lat,id, species)
+mydata
+
+#' specify time
+mydata$time <- as.POSIXct(mydata$time, format="%Y-%m/%d %H:%M:%S")
+head(mydata)
+tail(mydata)
+
+#' make species a factor level
+#' rename the species to something simpler 
+mydata$species <- as.factor(mydata$species)
+levels(mydata$species)
+mydata<-mutate(mydata, species = fct_recode(species, "wb" = "Gyps africanus"))
+mydata<-mutate(mydata, species = fct_recode(species, "rv" = "Gyps rueppellii"))
+mydata<-mutate(mydata, species = fct_recode(species, "lf" = "Torgos tracheliotus"))
+levels(mydata$species)
+
+#' add a column name for the study
+mydata$study <- "Corinne_mara"
+
+#' add a column name for the timezone
+mydata$gmt <- "q"
+
+#' want columns in this order: time long lat id	species	study	gmt
+head(mydata)
+
+#' dates are getting messed up in the export
+#' specify their format here
+mydata$time <- format(mydata$time, "%d/%m/%Y %H:%M")
+head(mydata)
+tail(mydata)
+
+#' order the columns time	lat	long	id	species	study	gmt
+mydata <- select(mydata, time,	lat,	long,	id,	species,	study,	gmt)
+
+#' group by the id column and export a csv for each
+customFun  = function(DF) {
+  write.csv(DF,paste0("",unique(DF$id),".csv"),row.names = FALSE)
+  return(DF)
+}
+
+mydata %>% 
+  group_by(id) %>% 
+  do(customFun(.))

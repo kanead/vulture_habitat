@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1570636200674.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2139714371",
+    "id" : "E54970E2",
+    "lastKnownWriteTime" : 1569854004,
+    "last_content_update" : 1569854004,
+    "path" : "~/Manuscripts/VultureMovementData/Clean Corinne Masai Mara.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "60,0",
+        "scrollLine" : "22"
+    },
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

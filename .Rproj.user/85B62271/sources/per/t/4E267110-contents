@@ -61,6 +61,19 @@ data.frame(max_time)
 #' determine the length of time each bird was tracked for
 duration <- difftime(max_time$time, min_time$time, units = "days");duration
 
+#' export the cleaned tracks 
+#' write the function
+customFun  = function(DF) {
+  write.csv(DF,paste0("",unique(DF$id),".csv"),row.names = FALSE)
+  return(DF)
+}
+
+#' apply the function to the data set by bird ID
+swazi_data %>% 
+  group_by(id) %>% 
+  select(time, long, lat, id, species, study) %>% 
+  do(customFun(.))
+
 #' try the amt package 
 trk <-
   mk_track(
