@@ -1,0 +1,12 @@
+# prep the data
+ID = c(rep("A",5), rep("B",5))
+DateTime = c("2014-09-25 08:39:45", "2014-09-25 08:39:48", "2014-09-25 08:40:44", "2014-09-25 09:04:00","2014-09-25 09:04:10", "2014-09-25 08:33:32", "2014-09-25 08:34:41", "2014-09-25 08:35:24", "2014-09-25 09:04:00", "2014-09-25 09:04:09")
+df = data.frame(ID,DateTime, stringsAsFactors = FALSE)
+df$DateTime<-as.POSIXct(df$DateTime, tz = "UTC")
+
+library(dplyr)
+df %>%
+  group_by(ID) %>%
+  mutate(timeDiff = c(NA, difftime(tail(DateTime, -1), head(DateTime, -1), units="sec"))) %>%
+  mutate(newID = paste(ID, cumsum(!is.na(timeDiff) & timeDiff > 100),sep = "_")) %>%
+  ungroup()
