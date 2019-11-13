@@ -1,0 +1,46 @@
+#' run the trout migration model 
+#' The nlrx r package: A next‐generation framework for reproducible NetLogo model analyses
+#' https://besjournals.onlinelibrary.wiley.com/doi/epdf/10.1111/2041-210X.13286
+#' https://github.com/ropensci/nlrx
+
+library(nlrx)
+
+
+nl <- nl(
+  nlversion = "6.0.4",
+  nlpath = "C:/Program Files/NetLogo 6.0.4/",
+  modelpath = "C:/Program Files/NetLogo 6.0.4/app/models/Sample Models/Biology/trout-migration-full-time-matrix-2019-10-26-NewLifeHistory-NewTime.nlogo",
+  jvmmem = 1024
+)
+
+outpath <-
+  file.path("C:/Users/Adam/Documents/Science/Methods & Stats/nlrx package")
+
+
+#' attaching an experiment
+nl@experiment <- experiment(
+  expname = "trout_migration",
+  outpath = outpath,
+  repetition = 1,
+  tickmetrics = "true",
+  idsetup = "setup",
+  idgo = "go",
+  runtime = 100,
+  evalticks=seq(1,100,10),
+  metrics = c(
+    "count turtles with [sex = male]"
+  ),
+  constants = list(
+    "n-trout" = 30000,
+    "Check-Stability?" = "false"
+  )
+)
+
+#' Evaluate if variables and constants are valid:
+eval_variables_constants(nl)
+nl@simdesign <- simdesign_simple(nl = nl, nseeds = 1)
+
+# Run Simulation
+init <- Sys.time()
+results <- run_nl_all(nl = nl)
+Sys.time() - init
