@@ -1,0 +1,7 @@
+change 
+add library(adehabitatLT)
+select to dplyr::select
+threshold to 100km/hr
+trk to trk4 in the hr estimates
+add in regularization code
+_hr_reg.R

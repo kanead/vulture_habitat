@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1573666815938.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3270554560",
+    "id" : "6207F180",
+    "lastKnownWriteTime" : 1573666940,
+    "last_content_update" : 1573666940452,
+    "path" : "~/Science/Manuscripts/vulture_habitat/code/2. prep_ralph_hr_reg.R",
+    "project_path" : "code/2. prep_ralph_hr_reg.R",
+    "properties" : {
+        "cursorPosition" : "151,4",
+        "scrollLine" : "134"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -5,6 +5,8 @@ library(SDLfilter)
 library(amt)
 library(sp)
 library(janitor)
+library(adehabitatLT)
+
 # orr
 
 # select orr data which is Orr's data from everything
@@ -13,7 +15,7 @@ orr_data
 
 #' Check for duplicated observations (ones with same lat, long, time,
 #'  and individual identifier).
-ind2 <- orr_data %>% select(long, lat, id) %>%
+ind2 <- orr_data %>% dplyr::select(long, lat, id) %>%
   duplicated
 sum(ind2)
 # remove them
@@ -33,7 +35,7 @@ orr_data$New_time <-
 
 # keep only the new time data
 orr_data <-
-  select(orr_data, New_time, long, lat, id, species, study)
+  dplyr::select(orr_data, New_time, long, lat, id, species, study)
 orr_data <- rename(orr_data, time = New_time)
 orr_data
 
@@ -42,7 +44,7 @@ orr_data
 #' time needs to be labelled DateTime for these functions to work
 names(orr_data)[names(orr_data) == 'time'] <- 'DateTime'
 SDLfilterData <-
-  ddfilter.speed(data.frame(orr_data), vmax = 70, method = 1)
+  ddfilter.speed(data.frame(orr_data), vmax = 100, method = 1)
 length(SDLfilterData$DateTime)
 
 #' rename everything as before
@@ -82,18 +84,18 @@ data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_r
   dplyr::select(id, sr) %>% unnest %>% arrange(id)
 
 
-#' Calculate home range size for data that is not regularised
-mcps <- trk %>% nest(-id) %>%
+#' Calculate home range size for data that is regularised
+mcps <- trk4 %>% nest(-id) %>%
   mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, mcparea) %>% unnest()
+  dplyr::select(id, mcparea) %>% unnest()
 
 mcps$area <- mcps$area / 1000000
 mcp_95 <- mcps %>% arrange(id)
 
 #' Same for KDE
-kde <- trk %>% nest(-id) %>%
+kde <- trk4 %>% nest(-id) %>%
   mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
-  select(id, kdearea) %>% unnest()
+  dplyr::select(id, kdearea) %>% unnest()
 
 kde$kdearea <-  kde$kdearea / 1000000
 kde_95 <- kde %>% arrange(id)
