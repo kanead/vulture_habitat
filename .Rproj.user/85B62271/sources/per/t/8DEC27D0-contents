@@ -13,12 +13,12 @@ res_data <- files %>%
   # read in all the files, appending the path before the filename
   map( ~ read_csv(file.path(data_path, .))) %>%
   reduce(rbind)
-
+levels(as.factor((res_data$study)))
 res_data
 #' associate a broad geographic location with each study
 
 #' CK = east
-#' masai = east
+#' mara = east
 #' north = east
 #' Corinne_mara = east
 #' GA_Namibia = south
@@ -33,11 +33,13 @@ res_data
 #' orr = south 
 #' galligan = south 
 #' Schabo = south 
+#' louis = south
+#' Campbell = south
 
 res_data$region <-
   if_else(
     res_data$study == "CK" |
-      res_data$study == "masai" |
+      res_data$study == "mara" |
       res_data$study == "north" |
       res_data$study == "Corinne_mara" ,
     "east",

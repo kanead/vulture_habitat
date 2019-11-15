@@ -65,7 +65,7 @@ data.frame(max_time)
 #' one of the IDs (5863) has a date in 2025! 
 #' This seems to be only the last few rows 
 #' We can delete anything that comes after a certain date
-ga_nam <- ga_nam %>% filter(time < "2019-01-01")
+ga_nam <- ga_nam %>% filter(time < "2020-01-01")
 
 #' check the dates again
 max_time <- ga_nam %>% group_by(id) %>% slice(which.max(time))
@@ -162,8 +162,8 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
-    )
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+      )
   )
 trk4
 

@@ -71,6 +71,11 @@ morgan_data <- rename(morgan_data, time = New_time)
 #' The time zone should be UTC +2 (South African Standard Time)
 morgan_data$time<-force_tz(morgan_data$time, "africa/johannesburg")
 
+#' need to remove the underscores from the IDs here
+levels(as.factor(morgan_data$id))
+morgan_data$id <-  str_replace_all(morgan_data$id, "[[:punct:]]", "")
+levels(as.factor(morgan_data$id))
+
 #' estimate vmax for threshold speed 
 #' names(morgan_data)[names(morgan_data) == 'time'] <- 'DateTime'
 #' speed.est.data <- morgan_data %>% select(id,DateTime,lat,long)
@@ -187,7 +192,7 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4

@@ -27,14 +27,22 @@ levels(factor(north_data$id))
 # can look at an individual level with 
 (filter(north_data,id=="Bastard"))
 
+#' The id Big has an erroneous point for longitude 
+#' north_data <- north_data %>% filter(id=="Big")
+#' max(north_data$long)
+#' remove it here
+north_data <- north_data %>% filter(long < 145554)
+
 # all of the data is in the format of day-month-year 
-north_data$New_time<-parse_date_time(x=north_data$time,c("%d/%m/%Y %H:%M:%S"))
+north_data$New_time<-parse_date_time(x=north_data$time,c("%Y/%m/%d %H:%M:%S"))
 
 # keep only the new time data
 north_data <- dplyr::select(north_data, New_time,long,lat,id,species,study)
 north_data <- rename(north_data, time = New_time)
 north_data
+tail(north_data)
 
+#' not working for this data set for some reason
 #' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
@@ -144,7 +152,7 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4

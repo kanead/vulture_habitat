@@ -9,7 +9,7 @@ library(adehabitatLT)
 # mara
 
 # select mara data which is Masai Mara data from everything
-masai_data <- filter(mydata, study == "masai")
+masai_data <- filter(mydata, study == "mara")
 masai_data
 
 #' Check for duplicated observations (ones with same lat, long, timestamp,
@@ -25,10 +25,10 @@ masai_data
 # set the time column
 levels(factor(masai_data$id))
 # can look at an individual level with 
-(filter(masai_data,id=="171605"))
+(filter(masai_data,id=="171605Matira"))
 
 # all of the data is in the format of day-month-year 
-masai_data$New_time<-parse_date_time(x=masai_data$time,c("%d/%m/%Y %H:%M"))
+masai_data$New_time<-parse_date_time(x=masai_data$time,c("%Y/%m/%d %H:%M"))
 
 # keep only the new time data
 masai_data <- dplyr::select(masai_data, New_time,long,lat,id,species,study)
@@ -146,7 +146,7 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4
@@ -175,17 +175,17 @@ data_summary$max_time <- max_time$time
 data_summary$kde <- kde_95$kdearea
 data_summary$mcps <- mcp_95$area
 data_summary$species <- min_time$species
-data_summary$study <- "masai"
+data_summary$study <- "mara"
 data_summary
 
 #' can export this data summary 
-write.csv(data_summary, file="track_resolution_summary/masai_data_summary.csv", row.names = FALSE)
+write.csv(data_summary, file="track_resolution_summary/masai_mara_data_summary.csv", row.names = FALSE)
 
 #' We can map the data
 #' turn back to lat long
 trk_map <-
   mk_track(
-    ga_nam,
+    masai_data,
     .x = long,
     .y = lat,
     .t = time,

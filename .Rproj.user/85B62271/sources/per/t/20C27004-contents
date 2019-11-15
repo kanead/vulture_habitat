@@ -23,7 +23,7 @@ mydata1 <- files %>%
 mydata1$long <- as.numeric(mydata1$long)
 mydata1$lat <- as.numeric(mydata1$lat)
 mydata <- mydata1 %>% drop_na()
-
+rm(mydata1)
 #' filter the data to remove obvious outliers
 mydata <- dplyr::filter(mydata1, lat < 20 & lat > -40 & long > 15 & long < 50)
 

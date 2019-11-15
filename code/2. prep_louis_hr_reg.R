@@ -1,87 +1,104 @@
-# Galligan's Vulture Tracking Dataset
+# Louis Phipps Vulture Tracking Dataset 
 
 library(lubridate)
 library(SDLfilter)
 library(amt)
 library(sp)
-library(janitor)
 library(adehabitatLT)
+# louis
 
-# Galligan
+# select louis data 
+louis_data <- filter(mydata, study == "louis")
+louis_data
 
-# select Galligan data which is Galligan's data from everything
-galligan_data <- filter(mydata, study == "galligan")
-galligan_data
-
-#' Check for duplicated observations (ones with same lat, long, time,
+#' Check for duplicated observations (ones with same lat, long, timestamp,
 #'  and individual identifier).
-ind2 <- galligan_data %>% dplyr::select(long, lat, id) %>%
-  duplicated
-sum(ind2)
-# remove them
-galligan_data$dups <- ind2
-galligan_data <- filter(galligan_data, dups == "FALSE")
-galligan_data
-tail(galligan_data)
-# set the time column
-levels(factor(galligan_data$id))
-# can look at an individual level with
-(filter(galligan_data, id == "143660"))
+ind2<-louis_data %>% dplyr::select(time, long, lat, id) %>%
+  duplicated 
+sum(ind2) 
+# remove them 
+louis_data$dups <- ind2
+louis_data <- filter(louis_data,dups=="FALSE")
+louis_data
 
-#' all of the data is in the format of day-month-year
-#' time zone is UTC by default
-galligan_data$New_time <-
-  parse_date_time(x = galligan_data$time, c("%d/%m/%Y %H:%M")) 
+# set the time column
+levels(factor(louis_data$id))
+# can look at an individual level with 
+(filter(louis_data,id=="AG032"))
+
+# all of the data is in the format of day-month-year 
+louis_data$New_time<-parse_date_time(x=louis_data$time,c("%Y/%m/%d %H:%M:%S"))
 
 # keep only the new time data
-galligan_data <-
-  dplyr::select(galligan_data, New_time, long, lat, id, species, study)
-galligan_data <- rename(galligan_data, time = New_time)
-galligan_data
+louis_data <- dplyr::select(louis_data, New_time,long,lat,id,species,study)
+louis_data <- rename(louis_data, time = New_time)
+louis_data
 
-#' filter extreme data based on a speed threshold
+#' remove underscore from an id
+louis_data$id <- str_replace_all(louis_data$id, "[[:punct:]]", "")
+levels(as.factor(louis_data$id))
+
+#' estimate vmax for threshold speed 
+#' names(louis_data)[names(louis_data) == 'time'] <- 'DateTime'
+#' speed.est.data <- louis_data %>% filter(id == "ID2") %>%  select(id,DateTime,lat,long)
+#' speed.est.data$qi = 5
+#' est.vmax(sdata = data.frame(speed.est.data))
+
+#' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
-names(galligan_data)[names(galligan_data) == 'time'] <- 'DateTime'
-SDLfilterData <-
-  ddfilter.speed(data.frame(galligan_data), vmax = 100, method = 1)
+names(louis_data)[names(louis_data) == 'time'] <- 'DateTime'
+SDLfilterData<-ddfilter.speed(data.frame(louis_data), vmax = 100, method = 1)
 length(SDLfilterData$DateTime)
 
 #' rename everything as before
-galligan_data <- SDLfilterData
-names(galligan_data)[names(galligan_data) == 'DateTime'] <- 'time'
+louis_data <- SDLfilterData
+names(louis_data)[names(louis_data) == 'DateTime'] <- 'time'
 
 # check the minimum time and the maximum time
-min_time <- galligan_data %>% group_by(id) %>% slice(which.min(time))
+min_time <- louis_data %>% group_by(id) %>% slice(which.min(time))
 data.frame(min_time)
 
-max_time <- galligan_data %>% group_by(id) %>% slice(which.max(time))
+max_time <- louis_data %>% group_by(id) %>% slice(which.max(time))
 data.frame(max_time)
 
 #' determine the length of time each bird was tracked for
-duration <-difftime(max_time$time, min_time$time, units = "days"); duration
+duration <- difftime(max_time$time, min_time$time, units = "days");duration
 
-# try the amt package
+#' export the cleaned tracks 
+#' write the function
+#' customFun  = function(DF) {
+#'   write.csv(DF,paste0("",unique(DF$id),".csv"),row.names = FALSE)
+#'   return(DF)
+#' }
+
+#' apply the function to the data set by bird ID
+#' louis_data %>% 
+#'  group_by(id) %>% 
+#'  dplyr::select(time, long, lat, id, species, study) %>% 
+#'  do(customFun(.))
+
+#' try the amt package 
 trk <-
   mk_track(
-    galligan_data,
+    louis_data,
     .x = long,
     .y = lat,
     .t = time,
     id = id,
     species = species,
-    crs = CRS("+init=epsg:4326")
-  ) %>%
+    crs = CRS("+init=epsg:4326"))  %>%
   transform_coords(
-    sp::CRS(
-      #' we can transform the CRS of the data to an equal area projection
+    sp::CRS( #' we can transform the CRS of the data to an equal area projection
+      #' https://epsg.io/102022
       "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 
+
 #' summarise the sampling rate
 data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
-  dplyr::select(id, sr) %>% unnest %>% arrange(id)
+  dplyr::select(id, sr) %>% unnest %>% arrange(id) ; data_summary
 
 #' measure the time difference between points for each bird ID using dplyr
 #' - Group your data by ID
@@ -118,7 +135,7 @@ tstep <-
   14400 # time step we want for the rediscretization, in seconds, 14400 secs = 4 hours
 newtr <- redisltraj(trk_ltraj, u = tstep, type = "time")
 head(newtr[1])
-head(newtr[5])
+head(newtr[2])
 class(newtr)
 
 #' convert to class data frame
@@ -161,6 +178,7 @@ mcps <- trk4 %>% nest(-id) %>%
 
 mcps$area <- mcps$area / 1000000
 mcp_95 <- mcps %>% arrange(id)
+mcp_95
 
 #' Same for KDE
 kde <- trk4 %>% nest(-id) %>%
@@ -169,6 +187,7 @@ kde <- trk4 %>% nest(-id) %>%
 
 kde$kdearea <-  kde$kdearea / 1000000
 kde_95 <- kde %>% arrange(id)
+kde_95
 
 
 #' combine the summary stats
@@ -178,8 +197,43 @@ data_summary$max_time <- max_time$time
 data_summary$kde <- kde_95$kdearea
 data_summary$mcps <- mcp_95$area
 data_summary$species <- min_time$species
-data_summary$study <- "galligan"
+data_summary$study <- "louis"
 data_summary
 
 #' can export this data summary 
-write.csv(data_summary, file="track_resolution_summary/galligan_data_summary.csv", row.names = FALSE)
+write.csv(data_summary, file="track_resolution_summary/louis_data_summary.csv", row.names = FALSE)
+
+#' ---
+#' We can map the data
+#' turn back to lat long
+trk_map <-
+  mk_track(
+    louis_data,
+    .x = long,
+    .y = lat,
+    .t = time,
+    id = id,
+    species = species,
+    crs = CRS("+init=epsg:4326")
+  )
+
+#' plot all of the data on the one graph
+library(ggmap)
+qmplot(x_,
+       y_,
+       data = trk_map,
+       maptype = "toner-lite",
+       colour = id)
+#  color = I("red"))
+
+#' plot each track on a separate panel using facet
+(
+  qmplot(
+    x_,
+    y_,
+    data = trk_map,
+    maptype = "toner-background",
+    colour = id
+  ) +
+    facet_wrap( ~ id)
+)

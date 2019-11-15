@@ -33,8 +33,13 @@ levels(factor(ck_tanz_data$id))
 #' CK said the recorder started at 6am with hourly points
 #' including a relocation at midnight
 
-ck_tanz_data$New_time <-
-  parse_date_time(x = ck_tanz_data$time, c("%d/%m/%Y %H:%M"), tz = "africa/dar_es_salaam") + hours(2)
+# ck_tanz_data$New_time <-
+#  parse_date_time(x = ck_tanz_data$time, c("%d/%m/%Y %H:%M"), tz = "africa/dar_es_salaam") + hours(2)
+
+# all of the data is in the format of day-month-year 
+ck_tanz_data$New_time<-parse_date_time(x=ck_tanz_data$time,c("%d/%m/%Y %H:%M", "%Y/%m/%d %H:%M"))
+#' which(is.na(ck_tanz_data$New_time))
+#' ck_tanz_data[521,]
 
 # keep only the new time data
 ck_tanz_data <-
@@ -167,7 +172,7 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4
@@ -200,7 +205,7 @@ data_summary$study <- "CK"
 data_summary
 
 #' can export this data summary 
-#' write.csv(data_summary, file="track_resolution_summary/ck_data_summary.csv", row.names = FALSE)
+write.csv(data_summary, file="track_resolution_summary/ck_data_summary.csv", row.names = FALSE)
 
 #' We can map the data
 #' turn back to lat long
