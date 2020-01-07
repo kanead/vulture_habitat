@@ -1,0 +1,35 @@
+#' Home Range Estimation with Minimum Convex Polygon 
+#' https://jamesepaterson.github.io/jamespatersonblog/
+#' load the packages
+library(adehabitatHR)
+library(sp)
+library(scales) 
+library(ggmap)
+
+mydata <- read.csv("home_range_data.csv", header = T, sep = ",")
+head(mydata)
+plot(mydata$x, mydata$y, col = mydata$id, pch = 16)
+
+# remove any NAs from the data
+mydata <- mydata[!is.na(mydata$x) & !is.na(mydata$y),]
+
+# Keep only the id column and the x and y coordinates
+mydata.sp <- mydata[, c("id", "x", "y")] 
+
+# Define the coordinates
+coordinates(mydata.sp) <- c("x", "y")
+
+# Set the coordinate reference system (CRS)
+# More information on CRS here: 
+# https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/OverviewCoordinateReferenceSystems.pdf
+# The sample data are UTM points in WGS84 from zone 18N
+proj4string(mydata.sp) <- CRS( "+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs" )
+
+# Calculate MCPs for each animal
+# the units of home range are in hectares 
+mydata.mcp <- mcp(mydata.sp, percent = 100,unout = "ha")
+
+# Check out the resulting sizes 
+mydata.mcp
+
+

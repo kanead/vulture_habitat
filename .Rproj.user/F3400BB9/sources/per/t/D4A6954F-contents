@@ -1,0 +1,36 @@
+#' Home Range Estimation with Kernel Density Estimation 
+#' load the packages
+library(adehabitatHR)
+library(sp)
+library(scales) 
+
+mydata <- read.csv("home_range_data.csv", header = T, sep = ",")
+head(mydata)
+plot(mydata$x, mydata$y, col = mydata$id, pch = 16)
+
+# remove any NAs from the data
+mydata <- mydata[!is.na(mydata$x) & !is.na(mydata$y),]
+
+# Keep only the id column and the x and y coordinates
+mydata.sp <- mydata[, c("id", "x", "y")] 
+
+# Define the coordinates
+coordinates(mydata.sp) <- c("x", "y")
+
+# Set the coordinate reference system (CRS)
+# More information on CRS here: 
+# https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/OverviewCoordinateReferenceSystems.pdf
+# The sample data are UTM points in WGS84 from zone 18N
+proj4string(mydata.sp) <- CRS( "+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs" )
+
+library(adehabitatHR)
+kernel.ref <- kernelUD(mydata.sp, h = "href")  # href = the reference bandwidth
+image(kernel.ref) # plot
+
+# measure the size of the kernel
+mydata.kernel.poly <- getverticeshr(kernel.ref, percent = 95, unout = "ha") 
+print(mydata.kernel.poly)  # returns the area of each polygon
+
+# plot the KDEs
+plot(mydata.kernel.poly, col = mydata.kernel.poly@data$id, axes = TRUE)
+plot(turtles.sp, add = TRUE, col = "white", pch = 21)
