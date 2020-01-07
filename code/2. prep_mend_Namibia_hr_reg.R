@@ -35,6 +35,11 @@ mend_data <- dplyr::select(mend_data, New_time,long,lat,id,species,study)
 mend_data <- rename(mend_data, time = New_time)
 mend_data
 
+#' need to remove the underscores from the IDs here
+levels(as.factor(mend_data$id))
+mend_data$id <-  str_replace_all(mend_data$id, "[[:punct:]]", "")
+levels(as.factor(mend_data$id))
+
 #' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
@@ -151,6 +156,10 @@ trk4 <-
     )
   )
 trk4
+
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/mend_namibia_reg.csv", row.names = FALSE)
 
 #' Calculate home range size for data that is regularised
 mcps <- trk4 %>% nest(-id) %>%

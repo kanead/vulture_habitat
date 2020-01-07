@@ -280,6 +280,10 @@ trk4 <-
   )
 trk4
 
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/kerri_reg.csv", row.names = FALSE)
+
 #' Calculate home range size for data that is regularised
 mcps <- trk4 %>% nest(-id) %>%
   mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%

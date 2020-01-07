@@ -160,6 +160,9 @@ trk4 <-
   )
 trk4
 
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/corinne_mara_reg.csv", row.names = FALSE)
 
 #' Calculate home range size for data that is not regularised
 mcps <- trk4 %>% nest(-id) %>%
