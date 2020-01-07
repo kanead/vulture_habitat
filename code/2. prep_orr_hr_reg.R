@@ -83,6 +83,80 @@ trk <-
 data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_rate)) %>%
   dplyr::select(id, sr) %>% unnest %>% arrange(id)
 
+#' measure the time difference between points for each bird ID using dplyr
+#' - Group your data by ID
+#' - Compute time diffs between each timestamp in your group (the 1st time diff is NA)
+#' - Create a new ID that counts no. of prior time gaps that are large (e.g. > 24 hours)
+#' - Split the ID into newID by using an underscore separator
+
+length(levels(as.factor(trk$id)))
+#' need to add the arrange function here otherwise the order gets messed up
+trk2 <- trk %>%
+  group_by(id) %>%
+  mutate(timeDiff = c(NA, difftime(tail(t_, -1), head(t_, -1), units = "hours"))) %>%
+  mutate(newID = paste(id, cumsum(!is.na(timeDiff) &
+                                    timeDiff > 24), sep = "_")) %>% arrange(id, t_) %>%
+  ungroup()
+head(trk2)
+tail(trk2)
+
+#' check the number of newIDs
+levels(as.factor(trk2$newID))
+length(levels(as.factor(trk2$newID)))
+
+#' how long are the tracks now that some of them have been split
+sapply(split(trk2$x_, trk2$newID), length)
+
+#' create a trajectory object using adehabitatLT
+trk_ltraj <-
+  as.ltraj(xy = trk2[, c("x_", "y_")],
+           date = trk2$t_,
+           id = trk2$newID)
+
+#' rediscretization of the trajectory
+tstep <-
+  14400 # time step we want for the rediscretization, in seconds, 14400 secs = 4 hours
+newtr <- redisltraj(trk_ltraj, u = tstep, type = "time")
+head(newtr[1])
+head(newtr[5])
+class(newtr)
+
+#' convert to class data frame
+trk3 <- ld(newtr)
+head(trk3)
+class(trk3$date)
+
+#' we should group the IDs that were split if they had big gaps back together into their original ID structure
+#' this involves accessing the name of the new ID that occurs before the underscore
+trk3 <- separate(trk3,
+                 col = id,
+                 sep = "_",
+                 into = c("ID", "NA"))
+head(trk3)
+levels(as.factor(trk3$ID))
+length(levels(as.factor(trk3$ID)))
+
+#' remove the resultant NA column that occurs after the split
+trk3 <- dplyr::select(trk3, x, y, date, ID)
+head(trk3)
+
+#' turn it back into a trk
+trk4 <-
+  mk_track(
+    trk3,
+    .x = x,
+    .y = y,
+    .t = date,
+    id = ID,
+    crs = CRS(
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+    )
+  )
+trk4
+
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/orr_reg.csv", row.names = FALSE)
 
 #' Calculate home range size for data that is regularised
 mcps <- trk4 %>% nest(-id) %>%
@@ -112,4 +186,4 @@ data_summary$study <- "orr"
 data_summary
 
 #' can export this data summary 
-#' write.csv(data_summary, file="track_resolution_summary/orr_data_summary.csv", row.names = FALSE)
+write.csv(data_summary, file="track_resolution_summary/orr_data_summary.csv", row.names = FALSE)

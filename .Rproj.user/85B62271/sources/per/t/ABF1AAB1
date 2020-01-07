@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1578399930183.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "205107355",
+    "id" : "ABF1AAB1",
+    "lastKnownWriteTime" : 1578406719,
+    "last_content_update" : 1578406719939,
+    "path" : "~/Manuscripts/vulture_habitat/code/recurse_corinne_tanz.R",
+    "project_path" : "code/recurse_corinne_tanz.R",
+    "properties" : {
+        "cursorPosition" : "77,0",
+        "notebook_format" : "html_document",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

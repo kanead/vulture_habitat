@@ -39,6 +39,10 @@ Corinne_mara <-
 Corinne_mara <- rename(Corinne_mara, time = New_time)
 Corinne_mara
 
+#' remove underscore from an id
+Corinne_mara$id <- str_replace_all(Corinne_mara$id, "[[:punct:]]", "")
+levels(as.factor(Corinne_mara$id))
+
 #' filter extreme data based on a speed threshold
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
@@ -90,6 +94,8 @@ data_summary <- trk %>% nest(-id) %>% mutate(sr = map(data, summarize_sampling_r
 #' - Split the ID into newID by using an underscore separator
 
 length(levels(as.factor(trk$id)))
+levels(as.factor(trk$id))
+
 #' need to add the arrange function here otherwise the order gets messed up
 trk2 <- trk %>%
   group_by(id) %>%
@@ -149,11 +155,14 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4
 
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/corinne_mara_reg.csv", row.names = FALSE)
 
 #' Calculate home range size for data that is not regularised
 mcps <- trk4 %>% nest(-id) %>%

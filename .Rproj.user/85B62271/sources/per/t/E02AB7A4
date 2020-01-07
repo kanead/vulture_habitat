@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1578398923771.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4035310990",
+    "id" : "E02AB7A4",
+    "lastKnownWriteTime" : 1578400404,
+    "last_content_update" : 1578400404835,
+    "path" : "~/Manuscripts/vulture_habitat/code/recurse_swazi.R",
+    "project_path" : "code/recurse_swazi.R",
+    "properties" : {
+        "cursorPosition" : "26,24",
+        "scrollLine" : "0",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

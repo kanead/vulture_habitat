@@ -35,6 +35,11 @@ mend_data <- dplyr::select(mend_data, New_time,long,lat,id,species,study)
 mend_data <- rename(mend_data, time = New_time)
 mend_data
 
+#' need to remove the underscores from the IDs here
+levels(as.factor(mend_data$id))
+mend_data$id <-  str_replace_all(mend_data$id, "[[:punct:]]", "")
+levels(as.factor(mend_data$id))
+
 #' filter extreme data based on a speed threshold 
 #' based on vmax which is km/hr
 #' time needs to be labelled DateTime for these functions to work
@@ -147,10 +152,14 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4
+
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/mend_namibia_reg.csv", row.names = FALSE)
 
 #' Calculate home range size for data that is regularised
 mcps <- trk4 %>% nest(-id) %>%
@@ -179,7 +188,7 @@ data_summary$study <- "mend_Namibia"
 data_summary
 
 #' can export this data summary 
-#' write.csv(data_summary, file="track_resolution_summary/mend_data_summary.csv", row.names = FALSE)
+write.csv(data_summary, file="track_resolution_summary/mend_data_summary.csv", row.names = FALSE)
 
 #' We can map the data
 #' turn back to lat long

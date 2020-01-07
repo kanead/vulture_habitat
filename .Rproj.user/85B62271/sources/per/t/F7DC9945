@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1574248662066.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3677637856",
+    "id" : "F7DC9945",
+    "lastKnownWriteTime" : 1574248683,
+    "last_content_update" : 1574248683181,
+    "path" : "~/Manuscripts/vulture_habitat/code/2. prep_schabo_hr_reg.R",
+    "project_path" : "code/2. prep_schabo_hr_reg.R",
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

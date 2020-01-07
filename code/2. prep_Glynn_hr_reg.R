@@ -149,13 +149,17 @@ trk4 <-
     .t = date,
     id = ID,
     crs = CRS(
-      "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+      "+proj=aea +lat_1=20 +lat_2=-23 +lat_0=0 +lon_0=25 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
   )
 trk4
 
+trk4 <- trk4 %>% arrange(id)
+#' export this regularised track
+write.csv(x = trk4, file = "regularised/glynn_reg.csv", row.names = FALSE)
+
 #' Calculate home range size for data that is regularised
-mcps <- trk %>% nest(-id) %>%
+mcps <- trk4 %>% nest(-id) %>%
   mutate(mcparea = map(data, ~ hr_mcp(., levels = c(0.95)) %>% hr_area)) %>%
   dplyr::select(id, mcparea) %>% unnest()
 
@@ -163,7 +167,7 @@ mcps$area <- mcps$area / 1000000
 mcp_95 <- mcps %>% arrange(id)
 
 #' Same for KDE
-kde <- trk %>% nest(-id) %>%
+kde <- trk4 %>% nest(-id) %>%
   mutate(kdearea = map(data, ~ hr_kde(., levels = c(0.95)) %>% hr_area)) %>%
   dplyr::select(id, kdearea) %>% unnest()
 
